@@ -211,6 +211,8 @@ class BackgroundServices(
             // Necessary to enable "Manage Account" functionality and ability to generate OAuth
             // codes for certain scopes.
             SCOPE_SESSION,
+            // Necessary for IP Protection to authenticate with the VPN backend.
+            "https://identity.mozilla.com/apps/vpn",
         ),
         crashReporter,
     ).also { accountManager ->
