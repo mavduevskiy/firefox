@@ -221,6 +221,9 @@
     <string name="pref_key_https_only_in_all_tabs" translatable="false">pref_key_https_only_in_all_tabs</string>
     <string name="pref_key_https_only_in_private_tabs" translatable="false">pref_key_https_only_in_private_tabs</string>
 
+    <!-- IP Protection Settings -->
+    <string name="pref_key_ip_protection_settings" translatable="false">pref_key_ip_protection_settings</string>
+
     <!-- Cookie Banner Reduction Settings-->
     <string name="pref_key_cookie_banner_private_mode" translatable="false">pref_key_cookie_banner_private_mode</string>
 

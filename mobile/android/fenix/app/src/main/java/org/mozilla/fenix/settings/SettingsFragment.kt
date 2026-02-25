@@ -71,6 +71,7 @@ import org.mozilla.fenix.settings.account.AccountUiView
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.geckoview.IPProtectionController
 import kotlin.system.exitProcess
 import org.mozilla.fenix.GleanMetrics.Settings as SettingsMetrics
 
@@ -404,6 +405,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SettingsFragmentDirections.actionSettingsFragmentToHttpsOnlyFragment()
             }
 
+            resources.getString(R.string.pref_key_ip_protection_settings) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToIpProtectionFragment()
+            }
+
             resources.getString(R.string.pref_key_tracking_protection_settings) -> {
                 TrackingProtection.etpSettings.record(NoExtras())
                 SettingsFragmentDirections.actionSettingsFragmentToTrackingProtectionFragment()
@@ -613,6 +618,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         )
         setupGeckoLogsPreference(settings)
         setupHttpsOnlyPreferences(settings)
+        setupIpProtectionPreferences()
         setupNotificationPreference(
             NotificationManagerCompat.from(requireContext()).areNotificationsEnabled(),
         )
@@ -827,6 +833,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     getString(R.string.preferences_https_only_on_private)
                 else -> null
             }
+    }
+
+    private fun setupIpProtectionPreferences() {
+        val pref = requirePreference<Preference>(R.string.pref_key_ip_protection_settings)
+        val runtime = requireComponents.core.geckoRuntime
+        runtime.getIPProtectionController().state.accept { stateInfo ->
+            if (stateInfo != null) {
+                pref.summary = when (stateInfo.proxyState) {
+                    IPProtectionController.PROXY_STATE_ACTIVE,
+                    IPProtectionController.PROXY_STATE_ACTIVATING,
+                    -> getString(R.string.preferences_ip_protection_on)
+                    else -> getString(R.string.preferences_ip_protection_off)
+                }
+            }
+        }
     }
 
     private fun updateProfilerUI(profilerStatus: Boolean) {

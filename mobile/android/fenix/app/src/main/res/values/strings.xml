@@ -803,6 +803,18 @@
     <string name="preferences_https_only_in_all_tabs">Enable in all tabs</string>
     <!-- Option for the https only setting -->
     <string name="preferences_https_only_in_private_tabs">Enable only in private tabs</string>
+
+    <!-- IP Protection settings -->
+    <string name="preferences_ip_protection_title" translatable="false">IP Protection</string>
+    <string name="preferences_ip_protection_summary" translatable="false">Routes certain network requests through a proxy to hide your IP address from known trackers.</string>
+    <string name="preferences_ip_protection_on" translatable="false">On</string>
+    <string name="preferences_ip_protection_off" translatable="false">Off</string>
+    <string name="ip_protection_state_active" translatable="false">Active</string>
+    <string name="ip_protection_state_activating" translatable="false">Activating…</string>
+    <string name="ip_protection_state_not_ready" translatable="false">Not available</string>
+    <string name="ip_protection_state_error" translatable="false">Error</string>
+    <string name="ip_protection_state_paused" translatable="false">Paused</string>
+
     <!-- Title shown in the error page for when trying to access a http website while https only mode is enabled. -->
     <string name="errorpage_httpsonly_title">Secure site not available</string>
     <!-- Message shown in the error page for when trying to access a http website while https only mode is enabled. The message has two paragraphs. This is the first. -->
