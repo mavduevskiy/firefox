@@ -143,6 +143,21 @@ public class IPProtectionController {
     }
   }
 
+  /**
+   * Provides a fresh authentication token on demand. Called each time the JS layer needs to make
+   * a Guardian API request, so tokens are never cached in the browser process.
+   */
+  public interface TokenProvider {
+    /**
+     * Returns a valid authentication token.
+     *
+     * @return A {@link GeckoResult} that resolves to the token string, or null if unavailable.
+     */
+    @UiThread
+    @NonNull
+    GeckoResult<String> getToken();
+  }
+
   /** Delegate for receiving IP protection state notifications. */
   public interface Delegate {
     /**
@@ -155,12 +170,16 @@ public class IPProtectionController {
   }
 
   private Delegate mDelegate;
+  private TokenProvider mTokenProvider;
   private final BundleEventListener mEventListener;
 
   /* package */ IPProtectionController() {
     mEventListener = new EventListener();
     EventDispatcher.getInstance()
-        .registerUiThreadListener(mEventListener, "GeckoView:IPProtection:StateChanged");
+        .registerUiThreadListener(
+            mEventListener,
+            "GeckoView:IPProtection:StateChanged",
+            "GeckoView:IPProtection:GetToken");
   }
 
   /**
@@ -184,6 +203,24 @@ public class IPProtectionController {
   public Delegate getDelegate() {
     ThreadUtils.assertOnUiThread();
     return mDelegate;
+  }
+
+  /**
+   * Sets the {@link TokenProvider} used to supply authentication tokens to the IP protection
+   * service. Pass {@code null} to sign out.
+   *
+   * @param provider The {@link TokenProvider}, or {@code null} to sign out.
+   * @return A {@link GeckoResult} that resolves to the updated {@link StateInfo}.
+   */
+  @UiThread
+  public @NonNull GeckoResult<StateInfo> setTokenProvider(final @Nullable TokenProvider provider) {
+    ThreadUtils.assertOnUiThread();
+    mTokenProvider = provider;
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putBoolean("hasProvider", provider != null);
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:SetTokenProvider", bundle)
+        .map(StateInfo::new);
   }
 
   /**
@@ -230,12 +267,24 @@ public class IPProtectionController {
     @Override
     public void handleMessage(
         final String event, final GeckoBundle message, final EventCallback callback) {
-      if (mDelegate == null) {
-        return;
-      }
-
       if ("GeckoView:IPProtection:StateChanged".equals(event)) {
-        mDelegate.onStateChanged(new StateInfo(message));
+        if (mDelegate != null) {
+          mDelegate.onStateChanged(new StateInfo(message));
+        }
+      } else if ("GeckoView:IPProtection:GetToken".equals(event)) {
+        if (mTokenProvider == null) {
+          callback.sendError("No token provider");
+          return;
+        }
+        callback.resolveTo(
+            mTokenProvider
+                .getToken()
+                .map(
+                    token -> {
+                      final GeckoBundle result = new GeckoBundle(1);
+                      result.putString("token", token);
+                      return result;
+                    }));
       }
     }
   }

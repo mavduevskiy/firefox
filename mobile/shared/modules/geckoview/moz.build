@@ -20,6 +20,7 @@ EXTRA_JS_MODULES += [
     "GeckoViewContentBlocking.sys.mjs",
     "GeckoViewIdentityCredential.sys.mjs",
     "GeckoViewIPProtection.sys.mjs",
+    "GeckoViewIPPSignInWatcher.sys.mjs",
     "GeckoViewMediaControl.sys.mjs",
     "GeckoViewModule.sys.mjs",
     "GeckoViewNavigation.sys.mjs",

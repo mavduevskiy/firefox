@@ -2,19 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  IPProtectionService:
-    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
-  UIState: "resource://services-sync/UIState.sys.mjs",
-});
-
 /**
- * This class monitors the Sign-In state and triggers the update of the service
- * if needed.
+ * Proxy holder for sign-in state. Platform-specific implementations
+ * (IPPDesktopSignInWatcher, GeckoViewIPPSignInWatcher) register themselves
+ * via setImplementation(); all property access is transparently forwarded.
+ *
+ * IPProtectionService and other consumers import this module and use
+ * IPPSignInWatcher.isSignedIn without knowing which platform impl backs it.
  */
-class IPPSignInWatcherSingleton extends EventTarget {
+
+let _impl = null;
+
+class IPPSignInWatcherDefault extends EventTarget {
   #signedIn = false;
 
   get isSignedIn() {
@@ -25,51 +24,48 @@ class IPPSignInWatcherSingleton extends EventTarget {
     this.#signedIn = signedIn;
   }
 
-  init() {
-    this.#signedIn = Services.prefs.prefHasUserValue("services.sync.username");
+  get guardianClient() {
+    return null;
   }
 
-  /**
-   * Adds an observer for the FxA sign-in state, only when the browser is fully started.
-   */
-  async initOnStartupCompleted() {
-    this.fxaObserver = {
-      QueryInterface: ChromeUtils.generateQI([
-        Ci.nsIObserver,
-        Ci.nsISupportsWeakReference,
-      ]),
-
-      observe() {
-        let { status } = lazy.UIState.get();
-        let signedIn = status == lazy.UIState.STATUS_SIGNED_IN;
-        if (signedIn !== IPPSignInWatcher.isSignedIn) {
-          IPPSignInWatcher.isSignedIn = signedIn;
-          lazy.IPProtectionService.updateState();
-
-          IPPSignInWatcher.dispatchEvent(
-            new CustomEvent("IPPSignInWatcher:StateChanged", {
-              bubbles: true,
-              composed: true,
-            })
-          );
-        }
-      },
-    };
-
-    Services.obs.addObserver(this.fxaObserver, lazy.UIState.ON_UPDATE);
-  }
-
-  /**
-   * Removes the FxA sign-in state observer
-   */
-  uninit() {
-    if (this.fxaObserver) {
-      Services.obs.removeObserver(this.fxaObserver, lazy.UIState.ON_UPDATE);
-      this.fxaObserver = null;
-    }
-  }
+  init() {}
+  initOnStartupCompleted() {}
+  uninit() {}
 }
 
-const IPPSignInWatcher = new IPPSignInWatcherSingleton();
+const _default = new IPPSignInWatcherDefault();
+
+const IPPSignInWatcher = new Proxy(_default, {
+  get(target, prop, _receiver) {
+    if (prop === "setImplementation") {
+      return impl => {
+        _impl = impl;
+      };
+    }
+    const obj = _impl ?? target;
+    const val = Reflect.get(obj, prop, obj);
+    return typeof val === "function" ? val.bind(obj) : val;
+  },
+  set(target, prop, value) {
+    const obj = _impl ?? target;
+    return Reflect.set(obj, prop, value, obj);
+  },
+  has(target, prop) {
+    const obj = _impl ?? target;
+    return Reflect.has(obj, prop);
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    const obj = _impl ?? target;
+    return Reflect.getOwnPropertyDescriptor(obj, prop);
+  },
+  defineProperty(target, prop, descriptor) {
+    const obj = _impl ?? target;
+    return Reflect.defineProperty(obj, prop, descriptor);
+  },
+  ownKeys(target) {
+    const obj = _impl ?? target;
+    return Reflect.ownKeys(obj);
+  },
+});
 
 export { IPPSignInWatcher };

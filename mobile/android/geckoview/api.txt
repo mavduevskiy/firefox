@@ -2203,6 +2203,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public IPProtectionController.Delegate getDelegate();
     method @NonNull @UiThread public GeckoResult<IPProtectionController.StateInfo> getState();
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
+    method @NonNull @UiThread public GeckoResult<IPProtectionController.StateInfo> setTokenProvider(@Nullable IPProtectionController.TokenProvider);
     field public static final int PROXY_STATE_ACTIVATING = 2;
     field public static final int PROXY_STATE_ACTIVE = 3;
     field public static final int PROXY_STATE_ERROR = 4;
@@ -2223,6 +2224,10 @@ package org.mozilla.geckoview {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ServiceState {
+  }
+
+  public static interface IPProtectionController.TokenProvider {
+    method @NonNull @UiThread public GeckoResult<String> getToken();
   }
 
   public static class IPProtectionController.StateInfo {

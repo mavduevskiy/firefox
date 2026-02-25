@@ -750,7 +750,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   gConfig,
   "guardianEndpoint",
   "browser.ipProtection.guardian.endpoint",
-  "https://vpn.mozilla.com"
+  "https://vpn.mozilla.org"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   gConfig,

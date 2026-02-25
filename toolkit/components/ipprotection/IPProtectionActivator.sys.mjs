@@ -9,13 +9,11 @@ import { IPPAutoStartHelpers } from "moz-src:///toolkit/components/ipprotection/
 import { IPPEnrollAndEntitleManager } from "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs";
 import { IPPNimbusHelper } from "moz-src:///toolkit/components/ipprotection/IPPNimbusHelper.sys.mjs";
 import { IPProtectionServerlist } from "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs";
-import { IPPSignInWatcher } from "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs";
 import { IPPStartupCache } from "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs";
 import { IPPOptOutHelper } from "moz-src:///toolkit/components/ipprotection/IPPOptOutHelper.sys.mjs";
 
 const coreHelpers = [
   IPPStartupCache,
-  IPPSignInWatcher,
   IPProtectionServerlist,
   IPPEnrollAndEntitleManager,
   IPPProxyManager,
