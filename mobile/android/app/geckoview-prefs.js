@@ -89,6 +89,10 @@ pref("browser.download.useDownloadDir", true);
 // When enabled, Services.uriFixup.isDomainKnown('localhost') will return true
 pref("browser.fixup.domainwhitelist.localhost", true);
 
+pref("browser.ipProtection.cacheDisabled", true);
+pref("browser.ipProtection.enabled", true);
+pref("browser.ipProtection.optedOut", false);
+
 // Open in tab preferences
 pref("browser.link.open_newwindow", 3);
 
