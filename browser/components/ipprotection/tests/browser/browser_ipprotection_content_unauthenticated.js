@@ -16,13 +16,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionPanel:
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtection:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 /**

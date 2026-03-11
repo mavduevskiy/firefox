@@ -15,9 +15,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPPEnrollAndEntitleManager:
     "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
   IPPProxyManager:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 /**

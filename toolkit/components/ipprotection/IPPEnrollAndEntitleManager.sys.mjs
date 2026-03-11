@@ -6,11 +6,11 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPStartupCache:
-    "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPPSignInWatcher:
-    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs",
 });
 
 const LOG_PREF = "browser.ipProtection.log";
