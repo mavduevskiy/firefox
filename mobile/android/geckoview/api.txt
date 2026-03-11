@@ -102,6 +102,7 @@ import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.HandlerThread;
+import org.mozilla.geckoview.IPProtectionController;
 import org.mozilla.geckoview.Image;
 import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;
@@ -950,6 +951,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public CrashPullController.Delegate getCrashPullDelegate();
     method @NonNull @UiThread public static synchronized GeckoRuntime getDefault(@NonNull Context);
     method @Nullable @UiThread public GeckoRuntime.Delegate getDelegate();
+    method @NonNull @UiThread public IPProtectionController getIPProtectionController();
     method @NonNull @UiThread public OrientationController getOrientationController();
     method @AnyThread @Nullable public GeckoPreferenceController.Observer.Delegate getPreferencesObserverDelegate();
     method @Nullable @UiThread public GeckoRuntime.ServiceWorkerDelegate getServiceWorkerDelegate();
@@ -2193,6 +2195,44 @@ package org.mozilla.geckoview {
   }
 
   @Documented @Retention(value=RetentionPolicy.CLASS) @Target(value={ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.PARAMETER}) public interface HandlerThread {
+  }
+
+  public class IPProtectionController {
+    method @NonNull @UiThread public GeckoResult<IPProtectionController.StateInfo> activate();
+    method @NonNull @UiThread public GeckoResult<IPProtectionController.StateInfo> deactivate();
+    method @Nullable @UiThread public IPProtectionController.Delegate getDelegate();
+    method @NonNull @UiThread public GeckoResult<IPProtectionController.StateInfo> getState();
+    method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
+    field public static final int PROXY_STATE_ACTIVATING = 2;
+    field public static final int PROXY_STATE_ACTIVE = 3;
+    field public static final int PROXY_STATE_ERROR = 4;
+    field public static final int PROXY_STATE_NOT_READY = 0;
+    field public static final int PROXY_STATE_PAUSED = 5;
+    field public static final int PROXY_STATE_READY = 1;
+    field public static final int SERVICE_STATE_READY = 3;
+    field public static final int SERVICE_STATE_UNAUTHENTICATED = 2;
+    field public static final int SERVICE_STATE_UNAVAILABLE = 1;
+    field public static final int SERVICE_STATE_UNINITIALIZED = 0;
+  }
+
+  public static interface IPProtectionController.Delegate {
+    method @UiThread default public void onStateChanged(@NonNull IPProtectionController.StateInfo);
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ProxyState {
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ServiceState {
+  }
+
+  public static class IPProtectionController.StateInfo {
+    ctor protected StateInfo();
+    field @Nullable public final String lastError;
+    field public final int max;
+    field public final int proxyState;
+    field public final int remaining;
+    field @Nullable public final String resetTime;
+    field public final int serviceState;
   }
 
   @AnyThread public class Image {
