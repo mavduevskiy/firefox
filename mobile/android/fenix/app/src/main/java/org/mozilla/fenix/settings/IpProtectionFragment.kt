@@ -5,7 +5,6 @@
 package org.mozilla.fenix.settings
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.concept.sync.OAuthAccount
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.SettingsIpProtectionBinding
 import org.mozilla.fenix.ext.components
@@ -36,23 +36,23 @@ class IpProtectionFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val b = SettingsIpProtectionBinding.inflate(inflater)
-        binding = b
+        val binding = SettingsIpProtectionBinding.inflate(inflater)
 
-        initRowLabels(b)
+        initRowLabels(binding)
+        initIPProtection()
 
-        val runtime = requireContext().components.core.geckoRuntime
-        val ctrl = runtime.getIPProtectionController()
-        controller = ctrl
-
-        ctrl.setDelegate(delegate)
-        ctrl.state.accept { info ->
-            if (info != null) {
-                updateUI(info)
-            }
+        val account = requireContext().components.backgroundServices.accountManager.authenticatedAccount()
+        binding.ipProtectionSwitch.isEnabled = account != null
+        if (account != null) {
+            authenticateIPProtection(account)
+        } else {
+            // if the user has logged off after using vpn service, the controller will still keep
+            // the old token, we have to clear that to move the state machine into non auth state.
+            updateTokenProvider(null)
         }
 
-        return b.root
+        this.binding = binding
+        return binding.root
     }
 
     override fun onDestroyView() {
@@ -62,6 +62,44 @@ class IpProtectionFragment : Fragment() {
         super.onDestroyView()
     }
 
+    private fun initIPProtection() {
+        controller = requireContext().components.core.geckoRuntime.getIPProtectionController().also {
+            it.delegate = delegate
+            it.state.accept { info -> info?.let { updateUI(it) } }
+        }
+    }
+
+    private fun authenticateIPProtection(account: OAuthAccount) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val tokenProvider = IPProtectionController.TokenProvider {
+                val result = GeckoResult<String>()
+                lifecycleScope.launch {
+                    try {
+                        val tokenInfo = withContext(Dispatchers.IO) {
+                            account.getAccessToken("https://identity.mozilla.com/apps/vpn")
+                        }
+                        result.complete(tokenInfo?.token)
+                    } catch (e: Exception) {
+                        result.completeExceptionally(e)
+                    }
+                }
+                result
+            }
+
+            updateTokenProvider(tokenProvider)
+        }
+    }
+
+    private fun updateTokenProvider(tokenProvider: IPProtectionController.TokenProvider?) {
+        controller?.let {
+            it.setTokenProvider(tokenProvider)
+            it.state.accept { info ->
+                if (info != null) {
+                    updateUI(info)
+                }
+            }
+        }
+    }
     private fun initRowLabels(b: SettingsIpProtectionBinding) {
         b.rowServiceState.root.findViewById<TextView>(R.id.row_label).text = "Service State"
         b.rowProxyState.root.findViewById<TextView>(R.id.row_label).text = "Proxy State"
@@ -83,63 +121,12 @@ class IpProtectionFragment : Fragment() {
 
         b.ipProtectionSwitch.setOnCheckedChangeListener(null)
         b.ipProtectionSwitch.isChecked = isActive
-        b.ipProtectionSwitch.isEnabled = proxyState != IPProtectionController.PROXY_STATE_ACTIVATING
 
         b.ipProtectionSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                b.ipProtectionSwitch.isEnabled = false
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val accountManager =
-                            requireContext().components.backgroundServices.accountManager
-                        val account = accountManager.authenticatedAccount()
-                        if (account == null) {
-                            b.ipProtectionSwitch.isEnabled = true
-                            b.ipProtectionSwitch.isChecked = false
-                            return@launch
-                        }
-                        val tokenProvider = IPProtectionController.TokenProvider {
-                            val result = GeckoResult<String>()
-                            lifecycleScope.launch {
-                                try {
-                                    val tokenInfo = withContext(Dispatchers.IO) {
-                                        account.getAccessToken(
-                                            "https://identity.mozilla.com/apps/vpn",
-                                        )
-                                    }
-                                    result.complete(tokenInfo?.token)
-                                } catch (e: Exception) {
-                                    Log.e("IpProtection", "getAccessToken failed", e)
-                                    result.completeExceptionally(e)
-                                }
-                            }
-                            result
-                        }
-                        controller?.setTokenProvider(tokenProvider)?.accept(
-                            {
-                                controller?.activate()?.accept(
-                                    { /* delegate will update UI */ },
-                                    {
-                                        b.ipProtectionSwitch.isEnabled = true
-                                        b.ipProtectionSwitch.isChecked = false
-                                    },
-                                )
-                            },
-                            {
-                                b.ipProtectionSwitch.isEnabled = true
-                                b.ipProtectionSwitch.isChecked = false
-                            },
-                        )
-                    } catch (e: Exception) {
-                        b.ipProtectionSwitch.isEnabled = true
-                        b.ipProtectionSwitch.isChecked = false
-                    }
-                }
+                controller?.activate()
             } else {
-                controller?.deactivate()?.accept(
-                    { controller?.setTokenProvider(null) },
-                    { /* ignore errors on deactivate */ },
-                )
+                controller?.deactivate()
             }
         }
 

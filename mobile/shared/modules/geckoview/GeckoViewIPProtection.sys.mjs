@@ -106,7 +106,7 @@ export const GeckoViewIPProtection = {
       case "GeckoView:IPProtection:Activate": {
         lazy.IPPProxyManager.start()
           .then(({ error }) => {
-            aCallback.onSuccess(buildStateResponse(error));
+            aCallback.onSuccess(buildStateResponse(error ? String(error) : null));
           })
           .catch(err => {
             aCallback.onError(`Activation failed: ${err}`);
