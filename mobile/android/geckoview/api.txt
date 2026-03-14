@@ -2226,18 +2226,18 @@ package org.mozilla.geckoview {
   @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ServiceState {
   }
 
-  public static interface IPProtectionController.TokenProvider {
-    method @NonNull @UiThread public GeckoResult<String> getToken();
-  }
-
   public static class IPProtectionController.StateInfo {
     ctor protected StateInfo();
     field @Nullable public final String lastError;
-    field public final int max;
+    field public final long max;
     field public final int proxyState;
-    field public final int remaining;
+    field public final long remaining;
     field @Nullable public final String resetTime;
     field public final int serviceState;
+  }
+
+  public static interface IPProtectionController.TokenProvider {
+    method @NonNull @UiThread public GeckoResult<String> getToken();
   }
 
   @AnyThread public class Image {

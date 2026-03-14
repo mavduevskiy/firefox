@@ -806,14 +806,33 @@
 
     <!-- IP Protection settings -->
     <string name="preferences_ip_protection_title" translatable="false">IP Protection</string>
-    <string name="preferences_ip_protection_summary" translatable="false">Routes certain network requests through a proxy to hide your IP address from known trackers.</string>
+    <!-- Summary shown in the main settings list when VPN is active -->
     <string name="preferences_ip_protection_on" translatable="false">On</string>
+    <!-- Summary shown in the main settings list when VPN is inactive -->
     <string name="preferences_ip_protection_off" translatable="false">Off</string>
-    <string name="ip_protection_state_active" translatable="false">Active</string>
-    <string name="ip_protection_state_activating" translatable="false">Activating…</string>
-    <string name="ip_protection_state_not_ready" translatable="false">Not available</string>
-    <string name="ip_protection_state_error" translatable="false">Error</string>
-    <string name="ip_protection_state_paused" translatable="false">Paused</string>
+
+    <!-- Label for the VPN toggle row -->
+    <string name="ip_protection_toggle_label" translatable="false">VPN</string>
+    <!-- Headline in the promotional card shown at the top of the VPN settings screen -->
+    <string name="ip_protection_promo_headline" translatable="false">Turn on VPN for extra protection</string>
+    <!-- Body text in the promotional card. %1$s is the browser name (e.g. Firefox) -->
+    <string name="ip_protection_promo_body" translatable="false">Built-in VPN to enhance your privacy while browsing on %1$s.</string>
+    <!-- Label for the monthly data usage row -->
+    <string name="ip_protection_data_limit_label" translatable="false">Monthly data limit</string>
+    <!-- Data usage display. %1$.1f is the remaining data in GB, %2$.1f is the total monthly limit in GB -->
+    <string name="ip_protection_data_limit_value" translatable="false">%1$.1f GB of %2$.1f GB left</string>
+    <!-- Informational text below the data usage progress bar, followed by a "Learn more" link -->
+    <string name="ip_protection_data_reset_info" translatable="false">Resets to 50 GB on the first of every month.</string>
+    <!-- Clickable link label used in multiple places on the VPN settings screen -->
+    <string name="ip_protection_learn_more" translatable="false">Learn more</string>
+    <!-- Section header for the VPN server location settings -->
+    <string name="ip_protection_location_section" translatable="false">Location</string>
+    <!-- Label for the automatic server location toggle -->
+    <string name="ip_protection_location_automatic_label" translatable="false">Automatic</string>
+    <!-- Description for the automatic location toggle -->
+    <string name="ip_protection_location_automatic_description" translatable="false">Auto-select the VPN server region closest to you based on your timezone.</string>
+    <!-- List item that navigates to per-website VPN settings -->
+    <string name="ip_protection_manage_website_settings" translatable="false">Manage website settings</string>
 
     <!-- Title shown in the error page for when trying to access a http website while https only mode is enabled. -->
     <string name="errorpage_httpsonly_title">Secure site not available</string>

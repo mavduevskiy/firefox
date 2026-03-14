@@ -1070,7 +1070,7 @@
     <fragment
         android:id="@+id/ipProtectionFragment"
         android:name="org.mozilla.fenix.settings.IpProtectionFragment"
-        android:label="@string/preferences_ip_protection_title" />
+        android:label="@string/ip_protection_toggle_label" />
     <fragment
         android:id="@+id/trackingProtectionFragment"
         android:name="org.mozilla.fenix.settings.TrackingProtectionFragment">

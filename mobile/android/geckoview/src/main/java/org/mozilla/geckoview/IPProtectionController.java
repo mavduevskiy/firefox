@@ -114,11 +114,11 @@ public class IPProtectionController {
     /** The last error string, if {@link #proxyState} is {@link #PROXY_STATE_ERROR}. */
     public final @Nullable String lastError;
 
-    /** Remaining usage allowance, or -1 if unavailable. */
-    public final int remaining;
+    /** Remaining usage allowance in MB, or -1 if unavailable. */
+    public final long remaining;
 
-    /** Maximum usage allowance, or -1 if unavailable. */
-    public final int max;
+    /** Maximum usage allowance in MB, or -1 if unavailable. */
+    public final long max;
 
     /** The time when usage resets, as an ISO 8601 string, or null if unavailable. */
     public final @Nullable String resetTime;
@@ -128,8 +128,8 @@ public class IPProtectionController {
       serviceState = SERVICE_STATE_UNINITIALIZED;
       proxyState = PROXY_STATE_NOT_READY;
       lastError = null;
-      remaining = -1;
-      max = -1;
+      remaining = -1L;
+      max = -1L;
       resetTime = null;
     }
 
@@ -137,15 +137,15 @@ public class IPProtectionController {
       serviceState = parseServiceState(bundle.getString("serviceState", ""));
       proxyState = parseProxyState(bundle.getString("proxyState", ""));
       lastError = bundle.getString("lastError");
-      remaining = bundle.getInt("remaining", -1);
-      max = bundle.getInt("max", -1);
+      remaining = bundle.getLong("remaining", -1L);
+      max = bundle.getLong("max", -1L);
       resetTime = bundle.getString("resetTime");
     }
   }
 
   /**
-   * Provides a fresh authentication token on demand. Called each time the JS layer needs to make
-   * a Guardian API request, so tokens are never cached in the browser process.
+   * Provides a fresh authentication token on demand. Called each time the JS layer needs to make a
+   * Guardian API request, so tokens are never cached in the browser process.
    */
   public interface TokenProvider {
     /**
