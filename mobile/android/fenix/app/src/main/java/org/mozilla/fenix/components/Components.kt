@@ -392,6 +392,14 @@ class Components(private val context: Context) {
         Ads(context = context)
     }
 
+    val ipProtectionIntegration by lazyMonitored {
+        IpProtectionIntegration(
+            controller = core.ipProtectionController,
+            accountManager = backgroundServices.accountManager,
+            appStore = appStore,
+        )
+    }
+
     val relayEligibilityStore by lazyMonitored {
         RelayEligibilityStore(middleware = listOf(ClearLastUsedMiddleware()))
     }

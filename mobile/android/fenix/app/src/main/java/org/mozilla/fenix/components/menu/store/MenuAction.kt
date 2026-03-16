@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import mozilla.components.feature.addons.Addon
 import mozilla.components.lib.state.Action
 import mozilla.components.service.fxa.manager.AccountState
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 
 /**
@@ -199,6 +200,18 @@ sealed class MenuAction : Action {
     data class InitializeSummarizationMenuState(val state: SummarizationMenuState) : MenuAction()
 
     /**
+     * [MenuAction] dispatched when the VPN proxy status changes.
+     *
+     * @property status The new [VpnStatus].
+     */
+    data class UpdateVpnStatus(val status: VpnStatus) : MenuAction()
+
+    /**
+     * [MenuAction] dispatched when the user taps the VPN toggle in the menu.
+     */
+    data object ToggleVpn : MenuAction()
+
+    /**
      * [MenuAction] dispatched when a navigation event occurs for a specific destination.
      */
     sealed class Navigate : MenuAction() {
@@ -218,6 +231,11 @@ sealed class MenuAction : Action {
          * [Navigate] action dispatched when navigating to the settings.
          */
         data object Settings : Navigate()
+
+        /**
+         * [Navigate] action dispatched when navigating to the IP Protection (VPN) settings.
+         */
+        data object IpProtectionSettings : Navigate()
 
         /**
          * [Navigate] action dispatched when navigating to bookmarks.

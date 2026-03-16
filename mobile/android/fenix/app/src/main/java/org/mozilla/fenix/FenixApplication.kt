@@ -491,6 +491,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     components.backgroundServices.accountManager
                 }
 
+                // Start IP Protection integration to monitor VPN proxy state throughout the
+                // app lifecycle so any UI component can observe VPN status via AppStore.
+                logElapsedTime(logger, "Starting IP Protection integration") {
+                    components.ipProtectionIntegration.start()
+                }
+
                 // Start Relay feature to monitor account state throughout the app lifecycle.
                 // Note: This feature monitors FxA account changes and runs regardless of user
                 // settings; UI components check settings before actually using Relay functionality.

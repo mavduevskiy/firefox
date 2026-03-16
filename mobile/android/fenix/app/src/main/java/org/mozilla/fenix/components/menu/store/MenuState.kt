@@ -11,6 +11,7 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.lib.state.State
 import mozilla.components.support.ktx.kotlin.isAboutUrl
 import mozilla.components.support.ktx.kotlin.isContentUrl
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 
 /**
@@ -24,6 +25,7 @@ import org.mozilla.fenix.components.menu.MenuAccessPoint
  * @property isMoreMenuExpanded Whether or not the "more menu" is expanded.
  * @property isDesktopMode Whether or not the desktop mode is enabled for the currently visited
  * page.
+ * @property vpnStatus The current [VpnStatus] of the VPN proxy.
  */
 data class MenuState(
     val browserMenuState: BrowserMenuState? = null,
@@ -32,6 +34,7 @@ data class MenuState(
     val summarizationMenuState: SummarizationMenuState = SummarizationMenuState.Default,
     val isMoreMenuExpanded: Boolean = false,
     val isDesktopMode: Boolean = false,
+    val vpnStatus: VpnStatus = VpnStatus.NotAvailable,
 ) : State {
 
     /**

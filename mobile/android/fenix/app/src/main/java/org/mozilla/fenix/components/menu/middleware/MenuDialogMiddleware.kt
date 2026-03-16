@@ -31,6 +31,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
@@ -46,11 +47,13 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.utils.LastSavedFolderCache
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.geckoview.IPProtectionController
 
 /**
  * [Middleware] implementation for handling [MenuAction] and managing the [MenuState] for the menu
  * dialog.
  *
+ * @param ipProtectionController The [IPProtectionController] used to activate or deactivate the VPN proxy.
  * @param appStore The [AppStore] used to dispatch actions to update the global state.
  * @param addonManager An instance of the [AddonManager] used to provide access to [Addon]s.
  * @param settings An instance of [Settings] to read and write to the [SharedPreferences]
@@ -82,6 +85,7 @@ import org.mozilla.fenix.utils.Settings
  */
 @Suppress("LongParameterList", "CyclomaticComplexMethod")
 class MenuDialogMiddleware(
+    private val ipProtectionController: IPProtectionController,
     private val appStore: AppStore,
     private val addonManager: AddonManager,
     private val settings: Settings,
@@ -129,6 +133,7 @@ class MenuDialogMiddleware(
             is MenuAction.OnCFRShown -> onCFRShown()
             is MenuAction.OnSummarizationMenuExposed -> cacheMenuExposure(store)
             is MenuAction.OnMoreMenuClicked -> cacheMoreMenuClick(store)
+            is MenuAction.ToggleVpn -> toggleVpn(store)
             is MenuAction.RequestDesktopSite,
             is MenuAction.RequestMobileSite,
             -> requestSiteMode(
@@ -149,6 +154,11 @@ class MenuDialogMiddleware(
         setupPinnedState(store)
         setupExtensionState(store)
         setupPageSummarizationState(store)
+        setupVpnState(store)
+    }
+
+    private fun setupVpnState(store: Store<MenuState, MenuAction>) {
+        store.dispatch(MenuAction.UpdateVpnStatus(appStore.state.vpnStatus))
     }
 
     private fun setupPageSummarizationState(store: Store<MenuState, MenuAction>) {
@@ -445,6 +455,13 @@ class MenuDialogMiddleware(
             summarizeMenuSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
         }
     }
+
+     private fun toggleVpn(store: Store<MenuState, MenuAction>) {
+         when (store.state.vpnStatus) {
+             VpnStatus.Active, VpnStatus.Activating -> ipProtectionController.deactivate()
+             else -> ipProtectionController.activate()
+         }
+     }
 
     companion object {
         private const val NUMBER_OF_RECOMMENDED_ADDONS_TO_SHOW = 3

@@ -201,6 +201,8 @@ internal object AppStoreReducer {
             isDefaultBrowser = action.isDefault,
         )
 
+        is AppAction.UpdateVpnStatus -> state.copy(vpnStatus = action.status)
+
         is AppAction.UserAccountAuthenticated -> state.copy(
             snackbarState = SnackbarState.UserAccountAuthenticated,
         )

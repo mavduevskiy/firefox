@@ -19,7 +19,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.sync.OAuthAccount
+import org.mozilla.fenix.R
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.IPProtectionController
@@ -33,6 +36,11 @@ class IpProtectionFragment : Fragment() {
         override fun onStateChanged(info: IPProtectionController.StateInfo) {
             updateUI(info)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showToolbar(getString(R.string.ip_protection_toggle_label))
     }
 
     override fun onCreateView(

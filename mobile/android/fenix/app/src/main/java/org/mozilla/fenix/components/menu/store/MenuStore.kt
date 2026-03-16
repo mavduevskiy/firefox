@@ -43,6 +43,7 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.OnCFRShown,
         is MenuAction.OnCFRDismiss,
         is MenuAction.OnSummarizationMenuExposed,
+        is MenuAction.ToggleVpn,
         -> state
 
         is MenuAction.OnMoreMenuClicked -> state.copy(isMoreMenuExpanded = !state.isMoreMenuExpanded)
@@ -91,6 +92,8 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.InitializeSummarizationMenuState -> state.copyWithSummarizationMenuState {
             action.state
         }
+
+        is MenuAction.UpdateVpnStatus -> state.copy(vpnStatus = action.status)
     }
 }
 

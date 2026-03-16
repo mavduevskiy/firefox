@@ -22,6 +22,7 @@ import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
 import org.mozilla.fenix.components.metrics.MetricsUtils
@@ -36,6 +37,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
 import org.mozilla.fenix.wallpapers.Wallpaper
+import org.mozilla.geckoview.IPProtectionController
 
 /**
  * [Action] implementation related to [AppStore].
@@ -170,6 +172,13 @@ sealed class AppAction : Action {
      * @property isDefault The updated boolean to [AppState.isDefaultBrowser]
      */
     data class UpdateDefaultBrowserStatus(val isDefault: Boolean) : AppAction()
+
+    /**
+     * Updates the current [VpnStatus] based on proxy state changes from [IPProtectionController].
+     *
+     * @property status The new [VpnStatus].
+     */
+    data class UpdateVpnStatus(val status: VpnStatus) : AppAction()
 
     /**
      * [Action]s related to interactions with the Messaging Framework.

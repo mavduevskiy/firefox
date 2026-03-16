@@ -118,6 +118,11 @@ class MenuNavigationMiddleware(
                     MenuDialogFragmentDirections.actionGlobalSettingsFragment(),
                 )
 
+                is MenuAction.Navigate.IpProtectionSettings -> navController.nav(
+                    R.id.menuDialogFragment,
+                    MenuDialogFragmentDirections.actionGlobalIpProtectionFragment(),
+                )
+
                 is MenuAction.Navigate.InstalledAddonDetails -> navController.nav(
                     R.id.menuDialogFragment,
                     MenuDialogFragmentDirections.actionMenuDialogFragmentToInstalledAddonDetailsFragment(

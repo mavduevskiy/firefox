@@ -281,6 +281,8 @@ class MenuTelemetryMiddleware(
             MenuAction.OnCFRDismiss -> Menu.dismissCfr.record(NoExtras())
 
             MenuAction.Navigate.Summarizer,
+            MenuAction.Navigate.IpProtectionSettings,
+            MenuAction.ToggleVpn,
             MenuAction.InitAction,
             is MenuAction.CustomMenuItemAction,
             is MenuAction.UpdateBookmarkState,
@@ -294,6 +296,7 @@ class MenuTelemetryMiddleware(
             is MenuAction.OnSummarizationMenuExposed,
             is MenuAction.InitializeSummarizationMenuState,
             is MenuAction.OnMoreMenuClicked,
+            is MenuAction.UpdateVpnStatus,
             -> Unit
         }
     }

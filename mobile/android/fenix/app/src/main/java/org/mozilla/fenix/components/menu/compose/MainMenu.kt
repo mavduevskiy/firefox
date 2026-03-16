@@ -55,6 +55,7 @@ import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
@@ -118,6 +119,9 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onStopButtonClick Invoked when the user clicks on the stop button.
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  * @param extensionsMenuItemDescription The label of extensions menu item description.
+ * @param vpnStatus The current [VpnStatus] of the VPN proxy.
+ * @param onVpnToggle Invoked when the user taps the VPN toggle area to activate or deactivate the VPN.
+ * @param onVpnNavigate Invoked when the user taps the chevron to open the IP Protection settings screen.
  * @param moreSettingsSubmenu The content of more menu item.
  * @param extensionSubmenu The content of extensions menu item to avoid configuration during animation.
  */
@@ -169,6 +173,9 @@ fun MainMenu(
     onStopButtonClick: () -> Unit,
     onShareButtonClick: () -> Unit,
     extensionsMenuItemDescription: String?,
+    vpnStatus: VpnStatus,
+    onVpnToggle: () -> Unit,
+    onVpnNavigate: () -> Unit,
     moreSettingsSubmenu: @Composable () -> Unit,
     extensionSubmenu: @Composable () -> Unit,
 ) {
@@ -252,6 +259,14 @@ fun MainMenu(
                 onClick = {
                     onBannerClick()
                 },
+            )
+        }
+
+        MenuGroup {
+            VpnMenuItem(
+                vpnStatus = vpnStatus,
+                onToggle = onVpnToggle,
+                onNavigate = onVpnNavigate,
             )
         }
 
@@ -765,9 +780,12 @@ private fun MenuDialogPreview(
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
-                moreSettingsSubmenu = {},
-                extensionSubmenu = {},
-            )
+                vpnStatus = VpnStatus.NotAvailable,
+                  onVpnToggle = {},
+                  onVpnNavigate = {},
+                  moreSettingsSubmenu = {},
+                  extensionSubmenu = {},
+              )
         }
     }
 }
@@ -829,6 +847,9 @@ private fun MenuDialogPrivatePreview(
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
+                vpnStatus = VpnStatus.Active,
+                onVpnToggle = {},
+                onVpnNavigate = {},
                 moreSettingsSubmenu = {},
                 extensionSubmenu = {
                     Addons(

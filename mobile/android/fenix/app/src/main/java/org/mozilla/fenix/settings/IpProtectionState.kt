@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.settings
 
+import org.mozilla.fenix.components.VpnStatus
+
 /**
  * UI state for the VPN / IP Protection settings screen.
  *
@@ -22,13 +24,3 @@ data class IpProtectionState(
     val isAutoLocation: Boolean = true,
     val selectedLocation: String = "United States",
 )
-
-/** Represents the possible states of the VPN proxy. */
-enum class VpnStatus {
-    Active,
-    Activating,
-    Ready,
-    Paused,
-    Error,
-    NotAvailable,
-}

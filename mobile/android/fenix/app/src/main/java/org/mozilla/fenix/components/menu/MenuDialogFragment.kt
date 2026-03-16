@@ -142,6 +142,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<MenuDialogFragmentArgs>()
     private val webExtensionsMenuBinding = ViewBoundFeatureWrapper<WebExtensionsMenuBinding>()
+    private val vpnMenuBinding = ViewBoundFeatureWrapper<VpnMenuBinding>()
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
     private var isPrivate: Boolean = false
 
@@ -304,6 +305,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         ),
                         middleware = listOf(
                             MenuDialogMiddleware(
+                                ipProtectionController = components.core.ipProtectionController,
                                 appStore = appStore,
                                 addonManager = components.addonManager,
                                 settings = settings,
@@ -444,6 +446,19 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         owner = this@MenuDialogFragment,
                         view = this,
                     )
+
+                    vpnMenuBinding.set(
+                        feature = VpnMenuBinding(
+                            appStore = requireComponents.appStore,
+                            menuStore = store,
+                        ),
+                        owner = this@MenuDialogFragment,
+                        view = this,
+                    )
+
+                    val vpnStatus by remember {
+                        store.stateFlow.map { it.vpnStatus }
+                    }.collectAsState(initial = requireComponents.appStore.state.vpnStatus)
 
                     val recommendedAddons by remember {
                         store.stateFlow
@@ -653,6 +668,13 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     canGoBack = selectedTab?.content?.canGoBack ?: true,
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
+                                    vpnStatus = vpnStatus,
+                                     onVpnToggle = {
+                                         store.dispatch(MenuAction.ToggleVpn)
+                                     },
+                                    onVpnNavigate = {
+                                        store.dispatch(MenuAction.Navigate.IpProtectionSettings)
+                                    },
                                     scrollState = scrollState,
                                     showBanner = shouldShowMenuBanner && !defaultBrowser,
                                     isDownloadHighlighted = isDownloadHighlighted,

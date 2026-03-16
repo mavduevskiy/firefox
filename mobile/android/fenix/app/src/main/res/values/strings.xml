@@ -813,6 +813,14 @@
 
     <!-- Label for the VPN toggle row -->
     <string name="ip_protection_toggle_label" translatable="false">VPN</string>
+     <!-- Content description for the chevron button that opens VPN settings -->
+     <string name="ip_protection_navigate_settings" translatable="false">Open VPN settings</string>
+     <!-- Badge text in the browser menu when the VPN is connecting -->
+     <string name="ip_protection_menu_connecting" translatable="false">Connecting…</string>
+    <!-- Badge text in the browser menu when the VPN is paused (data quota exhausted) -->
+    <string name="ip_protection_menu_paused" translatable="false">Paused</string>
+    <!-- Badge text in the browser menu when the VPN has encountered an error -->
+    <string name="ip_protection_menu_error" translatable="false">Error</string>
     <!-- Headline in the promotional card shown at the top of the VPN settings screen -->
     <string name="ip_protection_promo_headline" translatable="false">Turn on VPN for extra protection</string>
     <!-- Body text in the promotional card. %1$s is the browser name (e.g. Firefox) -->
