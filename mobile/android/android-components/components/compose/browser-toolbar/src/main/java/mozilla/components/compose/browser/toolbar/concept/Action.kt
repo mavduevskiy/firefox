@@ -7,6 +7,7 @@ package mozilla.components.compose.browser.toolbar.concept
 import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
@@ -165,5 +166,15 @@ sealed class Action {
         val showPrivacyMask: Boolean,
         val onClick: BrowserToolbarEvent,
         val onLongClick: BrowserToolbarInteraction? = null,
+    ) : Action()
+
+    /**
+     * A composable action button.
+     *
+     * @property content The composable content to render. Receives [onInteraction] so it can
+     * dispatch [BrowserToolbarEvent]s back to the toolbar store.
+     */
+    data class ActionButtonComposable(
+        val content: @Composable (onInteraction: (BrowserToolbarEvent) -> Unit) -> Unit,
     ) : Action()
 }

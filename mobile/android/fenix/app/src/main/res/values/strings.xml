@@ -815,6 +815,10 @@
     <string name="ip_protection_toggle_label" translatable="false">VPN</string>
      <!-- Content description for the chevron button that opens VPN settings -->
      <string name="ip_protection_navigate_settings" translatable="false">Open VPN settings</string>
+     <!-- Label shown in the animated pill button in the browser toolbar address bar when VPN is active -->
+     <string name="vpn_toolbar_pill_label" translatable="false">VPN On</string>
+     <!-- Accessibility content description for the VPN animated pill button in the address bar -->
+     <string name="vpn_toolbar_pill_description" translatable="false">VPN is active</string>
      <!-- Badge text in the browser menu when the VPN is connecting -->
      <string name="ip_protection_menu_connecting" translatable="false">Connecting…</string>
     <!-- Badge text in the browser menu when the VPN is paused (data quota exhausted) -->

@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonComposable
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringContentDescription
@@ -105,6 +106,7 @@ fun ActionContainer(
                         onInteraction = { onInteraction(it) },
                     )
                 }
+                is ActionButtonComposable -> action.content(onInteraction)
             }
         }
     }

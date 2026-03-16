@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Context
 import android.os.Build
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonComposable
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
@@ -95,6 +97,7 @@ import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
+import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.CurrentTabClosed
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
@@ -123,6 +126,7 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
+import org.mozilla.fenix.components.toolbar.ui.AnimatedPillButton
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -269,6 +273,7 @@ class BrowserToolbarMiddleware(
                 observePageTrackingProtectionUpdates(store)
                 observePageSecurityUpdates(store)
                 observePermissionHighlightsUpdates(store)
+                observeVpnStatusUpdates(store)
             }
 
             is StartPageActions.SiteInfoClicked -> {
@@ -671,6 +676,31 @@ class BrowserToolbarMiddleware(
     }
 
     private fun buildStartPageActions(): List<Action> {
+        // When VPN is active, replace the standard site-security icon with the animated VPN pill.
+        // The pill uses Action.ActionButtonComposable so it can own its own Compose animation
+        // state (Animatable + LaunchedEffect), which is not expressible as a static ActionButtonRes.
+        // Reader mode hides page actions entirely, so we respect that gate here too.
+        if (appStore.state.vpnStatus == VpnStatus.Active &&
+            !browserScreenStore.state.readerModeStatus.isActive
+        ) {
+            val vpnIcon = AppCompatResources.getDrawable(uiContext, R.drawable.ic_vpn_on)
+            if (vpnIcon != null) {
+                return listOf(
+                    ActionButtonComposable { onInteraction ->
+                        AnimatedPillButton(
+                            icon = vpnIcon,
+                            text = uiContext.getString(R.string.vpn_toolbar_pill_label),
+                            contentDescription = uiContext.getString(R.string.vpn_toolbar_pill_description),
+                            // Reuse the existing SiteInfoClicked event so that tapping the VPN pill
+                            // opens the same trust/privacy panel as the regular lock icon would.
+                            onClick = StartPageActions.SiteInfoClicked,
+                            onInteraction = onInteraction,
+                        )
+                    },
+                )
+            }
+        }
+
         return listOf(
             ToolbarActionConfig(ToolbarAction.SiteInfo) {
                 !browserScreenStore.state.readerModeStatus.isActive
@@ -1047,6 +1077,17 @@ class BrowserToolbarMiddleware(
     ) {
         browserStore.observeWhileActive {
             distinctUntilChangedBy { it.selectedTab?.content?.permissionHighlights }
+                .collect {
+                    updateStartPageActions(store)
+                }
+        }
+    }
+
+    // Refreshes the start page actions when VPN status changes so the pill appears or
+    // disappears immediately even if the user hasn't navigated to a new page.
+    private fun observeVpnStatusUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        appStore.observeWhileActive {
+            distinctUntilChangedBy { it.vpnStatus }
                 .collect {
                     updateStartPageActions(store)
                 }
