@@ -71,20 +71,36 @@ export class GuardianClient {
       return false;
     }
 
-    const cached_clients = await lazy.fxAccounts.listAttachedOAuthClients();
+    // FxAccounts.sys.mjs is a desktop-only module and is not available on Android/GeckoView.
+    // On Android, authentication is handled by the Android FxA SDK and bridged to Gecko via
+    // setTokenProvider(). When listAttachedOAuthClients() throws (module missing), we treat
+    // the linked status as unknown and fall through to the Guardian API network check via
+    // fetchUserInfo() instead of short-circuiting with false, which would silently prevent
+    // enrollment on fresh installs on Android.
+    let fxAccountsAvailable = true;
+    let cached_clients;
+    try {
+      cached_clients = await lazy.fxAccounts.listAttachedOAuthClients();
+    } catch (_e) {
+      fxAccountsAvailable = false;
+      cached_clients = [];
+    }
     if (cached_clients.some(client => client.id === guardian_clientId)) {
       return true;
     }
-    if (onlyCached) {
+    if (onlyCached && fxAccountsAvailable) {
       return false;
     }
-    // If we don't have the client in the cache, we refresh it, just to be sure.
-    const refreshed_clients =
-      await lazy.fxAccounts.listAttachedOAuthClients(true);
-    if (refreshed_clients.some(client => client.id === guardian_clientId)) {
-      return true;
+    if (fxAccountsAvailable) {
+      // If we don't have the client in the cache, we refresh it, just to be sure.
+      const refreshed_clients =
+        await lazy.fxAccounts.listAttachedOAuthClients(true);
+      if (refreshed_clients.some(client => client.id === guardian_clientId)) {
+        return true;
+      }
+      return false;
     }
-    return false;
+    return true;
   }
 
   /**

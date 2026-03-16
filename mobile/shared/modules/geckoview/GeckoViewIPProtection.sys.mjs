@@ -28,6 +28,10 @@ function ensureInitialized() {
     return;
   }
   initialized = true;
+  // Without this, the listener ends up on the stub _default object and never
+  // fires when setTokenProvider() dispatches the event on the real instance, causing
+  // enrollment to silently never happen on fresh installs.
+  lazy.GeckoViewIPPSignInWatcher.init();
   lazy.IPProtectionActivator.addHelpers([lazy.GeckoViewIPPSignInWatcher]);
   lazy.IPProtectionActivator.init();
 }
