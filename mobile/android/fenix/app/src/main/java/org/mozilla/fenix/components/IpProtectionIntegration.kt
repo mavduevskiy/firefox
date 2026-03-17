@@ -60,9 +60,6 @@ class IpProtectionIntegration(
                 appStore.dispatch(AppAction.UpdateVpnState(info.toVpnState()))
             }
         }
-        controller.state.accept { info ->
-            info?.let { appStore.dispatch(AppAction.UpdateVpnState(it.toVpnState())) }
-        }
 
         accountManager.register(accountObserver)
 
@@ -82,18 +79,16 @@ class IpProtectionIntegration(
     }
 
     private fun setTokenProvider(account: OAuthAccount) {
-        controller.setTokenProvider(
-            IPProtectionController.TokenProvider {
-                val result = GeckoResult<String>()
-                scope.launch {
-                    val tokenInfo = withContext(Dispatchers.IO) {
-                        runCatching { account.getAccessToken(VPN_TOKEN_SCOPE) }.getOrNull()
-                    }
-                    result.complete(tokenInfo?.token)
+        controller.setTokenProvider {
+            val result = GeckoResult<String>()
+            scope.launch {
+                val tokenInfo = withContext(Dispatchers.IO) {
+                    runCatching { account.getAccessToken(VPN_TOKEN_SCOPE) }.getOrNull()
                 }
-                result
-            },
-        )
+                result.complete(tokenInfo?.token)
+            }
+            result
+        }
     }
 
     private fun IPProtectionController.StateInfo.toVpnState() = VpnState(
