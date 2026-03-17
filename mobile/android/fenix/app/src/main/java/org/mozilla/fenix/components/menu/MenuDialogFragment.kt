@@ -458,7 +458,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
                     val vpnStatus by remember {
                         store.stateFlow.map { it.vpnStatus }
-                    }.collectAsState(initial = requireComponents.appStore.state.vpnStatus)
+                    }.collectAsState(initial = requireComponents.appStore.state.vpnState.vpnStatus)
 
                     val recommendedAddons by remember {
                         store.stateFlow

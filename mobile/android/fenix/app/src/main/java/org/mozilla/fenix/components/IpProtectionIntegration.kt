@@ -20,18 +20,17 @@ private const val VPN_TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
 
 /**
  * App-lifetime integration that bridges [IPProtectionController] proxy state changes into
- * [AppStore] and keeps the token provider in sync with the FxA account state, so that the
- * VPN can be toggled from anywhere in the UI (e.g. the browser menu).
+ * [AppStore] as the single source of truth for all VPN-related state in the app.
+ *
+ * Dispatches [AppAction.UpdateVpnState] on every state change from the controller, carrying
+ * both the connection status and quota data. All UI (menu, address bar, settings fragment)
+ * reads exclusively from [AppStore] rather than holding their own controller references.
  *
  * Call [start] once at app startup and [stop] when the integration is no longer needed.
  *
- * Note: [IPProtectionController] supports only one delegate at a time. While the IP Protection
- * settings fragment is open it will temporarily override this delegate. This will be resolved
- * in a follow-up by migrating the fragment to read from [AppStore] instead.
- *
  * @param controller The [IPProtectionController] obtained from [GeckoRuntime].
  * @param accountManager The [FxaAccountManager] used to supply authentication tokens.
- * @param appStore The [AppStore] to dispatch [AppAction.UpdateVpnStatus] into.
+ * @param appStore The [AppStore] to dispatch [AppAction.UpdateVpnState] into.
  */
 class IpProtectionIntegration(
     private val controller: IPProtectionController,
@@ -58,13 +57,11 @@ class IpProtectionIntegration(
     fun start() {
         controller.delegate = object : IPProtectionController.Delegate {
             override fun onStateChanged(info: IPProtectionController.StateInfo) {
-                appStore.dispatch(AppAction.UpdateVpnStatus(proxyStateToVpnStatus(info.proxyState)))
+                appStore.dispatch(AppAction.UpdateVpnState(info.toVpnState()))
             }
         }
         controller.state.accept { info ->
-            info?.let {
-                appStore.dispatch(AppAction.UpdateVpnStatus(proxyStateToVpnStatus(it.proxyState)))
-            }
+            info?.let { appStore.dispatch(AppAction.UpdateVpnState(it.toVpnState())) }
         }
 
         accountManager.register(accountObserver)
@@ -98,6 +95,13 @@ class IpProtectionIntegration(
             },
         )
     }
+
+    private fun IPProtectionController.StateInfo.toVpnState() = VpnState(
+        vpnStatus = proxyStateToVpnStatus(proxyState),
+        dataRemainingBytes = remaining,
+        dataMaxBytes = max,
+        resetDate = resetTime,
+    )
 
     private fun proxyStateToVpnStatus(proxyState: Int): VpnStatus = when (proxyState) {
         IPProtectionController.PROXY_STATE_ACTIVE -> VpnStatus.Active

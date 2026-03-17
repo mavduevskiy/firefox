@@ -18,7 +18,7 @@ import org.mozilla.fenix.components.menu.store.MenuStore
  * Wires up the VPN state in [AppStore] with [MenuStore], so that we have the
  * right state in the menu UI.
  *
- * @param appStore The [AppStore] to observe for [AppState.vpnStatus] changes.
+ * @param appStore The [AppStore] to observe for [AppState.vpnState] changes.
  * @param menuStore The [MenuStore] to dispatch [MenuAction.UpdateVpnStatus] into.
  * @param mainDispatcher The [CoroutineDispatcher] to collect on.
  */
@@ -29,9 +29,9 @@ class VpnMenuBinding(
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { it.vpnStatus }
+        flow.distinctUntilChangedBy { it.vpnState.vpnStatus }
             .collect { state ->
-                menuStore.dispatch(MenuAction.UpdateVpnStatus(state.vpnStatus))
+                menuStore.dispatch(MenuAction.UpdateVpnStatus(state.vpnState.vpnStatus))
             }
     }
 }

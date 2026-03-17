@@ -680,7 +680,7 @@ class BrowserToolbarMiddleware(
         // The pill uses Action.ActionButtonComposable so it can own its own Compose animation
         // state (Animatable + LaunchedEffect), which is not expressible as a static ActionButtonRes.
         // Reader mode hides page actions entirely, so we respect that gate here too.
-        if (appStore.state.vpnStatus == VpnStatus.Active &&
+        if (appStore.state.vpnState.vpnStatus == VpnStatus.Active &&
             !browserScreenStore.state.readerModeStatus.isActive
         ) {
             val vpnIcon = AppCompatResources.getDrawable(uiContext, R.drawable.ic_vpn_on)
@@ -1087,7 +1087,7 @@ class BrowserToolbarMiddleware(
     // disappears immediately even if the user hasn't navigated to a new page.
     private fun observeVpnStatusUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         appStore.observeWhileActive {
-            distinctUntilChangedBy { it.vpnStatus }
+            distinctUntilChangedBy { it.vpnState.vpnStatus }
                 .collect {
                     updateStartPageActions(store)
                 }

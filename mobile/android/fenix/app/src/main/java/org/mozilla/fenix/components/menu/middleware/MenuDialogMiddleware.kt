@@ -158,7 +158,7 @@ class MenuDialogMiddleware(
     }
 
     private fun setupVpnState(store: Store<MenuState, MenuAction>) {
-        store.dispatch(MenuAction.UpdateVpnStatus(appStore.state.vpnStatus))
+        store.dispatch(MenuAction.UpdateVpnStatus(appStore.state.vpnState.vpnStatus))
     }
 
     private fun setupPageSummarizationState(store: Store<MenuState, MenuAction>) {
