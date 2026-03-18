@@ -41,15 +41,17 @@ class IpProtectionIntegration(
 
     private val accountObserver = object : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-            setTokenProvider(account)
+            // FxaAccountManager callbacks fire on a background thread; IPProtectionController
+            // requires the UI thread (@UiThread), so dispatch via the main-thread scope.
+            scope.launch { setTokenProvider(account) }
         }
 
         override fun onLoggedOut() {
-            controller.setTokenProvider(null)
+            scope.launch { controller.setTokenProvider(null) }
         }
 
         override fun onAuthenticationProblems() {
-            controller.setTokenProvider(null)
+            scope.launch { controller.setTokenProvider(null) }
         }
     }
 
