@@ -22,8 +22,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonComposable
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
+import mozilla.components.compose.browser.toolbar.concept.Action.VpnPillAction
+import mozilla.components.compose.browser.toolbar.ui.AnimatedPillButton
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringContentDescription
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringResContentDescription
@@ -106,7 +107,13 @@ fun ActionContainer(
                         onInteraction = { onInteraction(it) },
                     )
                 }
-                is ActionButtonComposable -> action.content(onInteraction)
+                is VpnPillAction -> AnimatedPillButton(
+                    icon = action.icon,
+                    text = action.text,
+                    contentDescription = action.contentDescription,
+                    onClick = action.onClick,
+                    onInteraction = onInteraction,
+                )
             }
         }
     }

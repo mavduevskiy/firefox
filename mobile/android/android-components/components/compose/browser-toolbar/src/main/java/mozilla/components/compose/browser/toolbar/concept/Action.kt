@@ -7,7 +7,6 @@ package mozilla.components.compose.browser.toolbar.concept
 import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Composable
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
@@ -169,12 +168,19 @@ sealed class Action {
     ) : Action()
 
     /**
-     * A composable action button.
+     * A transient pill-shaped action that shows an [icon] with a [text] label, then animates
+     * away — fading the label and background first, then collapsing to icon-only width — so
+     * the URL text slides in behind it once the pill has disappeared.
      *
-     * @property content The composable content to render. Receives [onInteraction] so it can
-     * dispatch [BrowserToolbarEvent]s back to the toolbar store.
+     * @property icon The icon to display (stays visible after the animation completes).
+     * @property text The label shown briefly beside the icon before it fades.
+     * @property contentDescription Accessibility description for the button.
+     * @property onClick [BrowserToolbarInteraction] dispatched when the button is tapped.
      */
-    data class ActionButtonComposable(
-        val content: @Composable (onInteraction: (BrowserToolbarEvent) -> Unit) -> Unit,
+    data class VpnPillAction(
+        val icon: Drawable,
+        val text: String,
+        val contentDescription: String,
+        val onClick: BrowserToolbarInteraction,
     ) : Action()
 }

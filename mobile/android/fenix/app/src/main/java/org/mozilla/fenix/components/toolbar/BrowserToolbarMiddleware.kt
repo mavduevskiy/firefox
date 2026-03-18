@@ -31,7 +31,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonComposable
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
@@ -126,7 +125,6 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
-import org.mozilla.fenix.components.toolbar.ui.AnimatedPillButton
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -677,8 +675,6 @@ class BrowserToolbarMiddleware(
 
     private fun buildStartPageActions(): List<Action> {
         // When VPN is active, replace the standard site-security icon with the animated VPN pill.
-        // The pill uses Action.ActionButtonComposable so it can own its own Compose animation
-        // state (Animatable + LaunchedEffect), which is not expressible as a static ActionButtonRes.
         // Reader mode hides page actions entirely, so we respect that gate here too.
         if (appStore.state.vpnState.vpnStatus == VpnStatus.Active &&
             !browserScreenStore.state.readerModeStatus.isActive
@@ -686,17 +682,12 @@ class BrowserToolbarMiddleware(
             val vpnIcon = AppCompatResources.getDrawable(uiContext, R.drawable.ic_vpn_on)
             if (vpnIcon != null) {
                 return listOf(
-                    ActionButtonComposable { onInteraction ->
-                        AnimatedPillButton(
-                            icon = vpnIcon,
-                            text = uiContext.getString(R.string.vpn_toolbar_pill_label),
-                            contentDescription = uiContext.getString(R.string.vpn_toolbar_pill_description),
-                            // Reuse the existing SiteInfoClicked event so that tapping the VPN pill
-                            // opens the same trust/privacy panel as the regular lock icon would.
-                            onClick = StartPageActions.SiteInfoClicked,
-                            onInteraction = onInteraction,
-                        )
-                    },
+                    Action.VpnPillAction(
+                        icon = vpnIcon,
+                        text = uiContext.getString(R.string.vpn_toolbar_pill_label),
+                        contentDescription = uiContext.getString(R.string.vpn_toolbar_pill_description),
+                        onClick = StartPageActions.SiteInfoClicked,
+                    ),
                 )
             }
         }
