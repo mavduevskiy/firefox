@@ -918,6 +918,15 @@ projects:
     - components:support-utils
     - components:tooling-lint
     - components:ui-icons
+  components:feature-firefox-vpn:
+    description: A VPN feature allowing the browser to route data through a VPN service provider.
+    path: components/feature/firefox-vpn
+    publish: true
+    upstream_dependencies:
+    - components:support-base
+    - components:support-ktx
+    - components:support-test
+    - components:tooling-lint
   components:feature-fxsuggest:
     description: A component for accessing Firefox Suggest search suggestions.
     path: components/feature/fxsuggest
