@@ -45,16 +45,25 @@ private val ROUNDED_CORNER = RoundedCornerShape(4.dp)
  * Tapping the label or badge area toggles the VPN; tapping the chevron navigates to settings.
  *
  * @param vpnStatus The current [VpnStatus] to render.
+ * @param isSignedIn Whether the user is currently signed in to a Firefox Account.
+ *   When false the badge shows "Sign in" regardless of VPN status, since the user
+ *   must authenticate before VPN can be activated.
  * @param onToggle Called when the label/badge area is tapped to activate or deactivate VPN.
  * @param onNavigate Called when the chevron is tapped to open the IP Protection settings screen.
  */
 @Composable
 internal fun VpnMenuItem(
     vpnStatus: VpnStatus,
+    isSignedIn: Boolean,
     onToggle: () -> Unit,
     onNavigate: () -> Unit,
 ) {
-    val badgeText = vpnStatusBadgeText(vpnStatus)
+    // Show "Sign in" when not authenticated, otherwise reflect the actual VPN state.
+    val badgeText = if (!isSignedIn) {
+        stringResource(R.string.vpn_menu_sign_in)
+    } else {
+        vpnStatusBadgeText(vpnStatus)
+    }
     val menuItemState = vpnStatusMenuItemState(vpnStatus)
 
     Row(
@@ -114,6 +123,9 @@ private fun vpnStatusBadgeText(status: VpnStatus): String = when (status) {
     VpnStatus.Activating -> stringResource(R.string.ip_protection_menu_connecting)
     VpnStatus.Paused -> stringResource(R.string.ip_protection_menu_paused)
     VpnStatus.Error -> stringResource(R.string.ip_protection_menu_error)
+    // Ready means authenticated and VPN available but not yet active — show "Off".
+    // NotAvailable falls through to "Off" too; the isSignedIn guard above handles
+    // the "Sign in" case before this function is consulted.
     else -> stringResource(R.string.preferences_ip_protection_off)
 }
 
@@ -130,7 +142,7 @@ private fun VpnMenuItemOffPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.NotAvailable, onToggle = {}, onNavigate = {})
+            VpnMenuItem(vpnStatus = VpnStatus.NotAvailable, isSignedIn = false, onToggle = {}, onNavigate = {})
         }
     }
 }
@@ -142,7 +154,7 @@ private fun VpnMenuItemOnPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.Active, onToggle = {}, onNavigate = {})
+            VpnMenuItem(vpnStatus = VpnStatus.Active, isSignedIn = true, onToggle = {}, onNavigate = {})
         }
     }
 }
@@ -154,7 +166,7 @@ private fun VpnMenuItemConnectingPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.Activating, onToggle = {}, onNavigate = {})
+            VpnMenuItem(vpnStatus = VpnStatus.Activating, isSignedIn = true, onToggle = {}, onNavigate = {})
         }
     }
 }

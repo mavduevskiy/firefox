@@ -238,6 +238,13 @@ sealed class MenuAction : Action {
         data object IpProtectionSettings : Navigate()
 
         /**
+         * [Navigate] action dispatched when the user taps the VPN menu item while not signed in
+         * to a Firefox Account. Routes to the FxA sign-in screen so they can authenticate before
+         * using the VPN feature.
+         */
+        data object VpnSignIn : Navigate()
+
+        /**
          * [Navigate] action dispatched when navigating to bookmarks.
          */
         data object Bookmarks : Navigate()

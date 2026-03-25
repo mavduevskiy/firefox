@@ -44,6 +44,8 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.OnCFRDismiss,
         is MenuAction.OnSummarizationMenuExposed,
         is MenuAction.ToggleVpn,
+        // VpnSignIn is a navigation-only command; no state mutation needed in the reducer.
+        is MenuAction.Navigate.VpnSignIn,
         -> state
 
         is MenuAction.OnMoreMenuClicked -> state.copy(isMoreMenuExpanded = !state.isMoreMenuExpanded)

@@ -32,6 +32,7 @@ import org.mozilla.fenix.components.menu.MenuDialogFragmentDirections
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.ext.nav
@@ -121,6 +122,17 @@ class MenuNavigationMiddleware(
                 is MenuAction.Navigate.IpProtectionSettings -> navController.nav(
                     R.id.menuDialogFragment,
                     MenuDialogFragmentDirections.actionGlobalIpProtectionFragment(),
+                )
+
+                // The user tapped the VPN button while not signed in to Firefox Account.
+                // Route them to the FxA sign-in screen so they can authenticate first.
+                // After sign-in, IpProtectionIntegration will pick up the account and wire
+                // the token provider, allowing VPN to activate on the next tap.
+                is MenuAction.Navigate.VpnSignIn -> navController.nav(
+                    R.id.menuDialogFragment,
+                    MenuDialogFragmentDirections.actionGlobalTurnOnSync(
+                        entrypoint = FenixFxAEntryPoint.HomeMenu,
+                    ),
                 )
 
                 is MenuAction.Navigate.InstalledAddonDetails -> navController.nav(

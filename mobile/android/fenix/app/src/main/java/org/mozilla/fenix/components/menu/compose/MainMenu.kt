@@ -120,6 +120,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  * @param extensionsMenuItemDescription The label of extensions menu item description.
  * @param vpnStatus The current [VpnStatus] of the VPN proxy.
+ * @param isSignedIn Whether the user is signed in to a Firefox Account. Controls whether the
+ *   VPN badge shows the connection state or a "Sign in" prompt.
  * @param onVpnToggle Invoked when the user taps the VPN toggle area to activate or deactivate the VPN.
  * @param onVpnNavigate Invoked when the user taps the chevron to open the IP Protection settings screen.
  * @param moreSettingsSubmenu The content of more menu item.
@@ -174,6 +176,7 @@ fun MainMenu(
     onShareButtonClick: () -> Unit,
     extensionsMenuItemDescription: String?,
     vpnStatus: VpnStatus,
+    isSignedIn: Boolean,
     onVpnToggle: () -> Unit,
     onVpnNavigate: () -> Unit,
     moreSettingsSubmenu: @Composable () -> Unit,
@@ -265,6 +268,7 @@ fun MainMenu(
         MenuGroup {
             VpnMenuItem(
                 vpnStatus = vpnStatus,
+                isSignedIn = isSignedIn,
                 onToggle = onVpnToggle,
                 onNavigate = onVpnNavigate,
             )
@@ -781,11 +785,12 @@ private fun MenuDialogPreview(
                 onStopButtonClick = {},
                 onShareButtonClick = {},
                 vpnStatus = VpnStatus.NotAvailable,
-                  onVpnToggle = {},
-                  onVpnNavigate = {},
-                  moreSettingsSubmenu = {},
-                  extensionSubmenu = {},
-              )
+                isSignedIn = false,
+                onVpnToggle = {},
+                onVpnNavigate = {},
+                moreSettingsSubmenu = {},
+                extensionSubmenu = {},
+            )
         }
     }
 }
@@ -848,6 +853,7 @@ private fun MenuDialogPrivatePreview(
                 onStopButtonClick = {},
                 onShareButtonClick = {},
                 vpnStatus = VpnStatus.Active,
+                isSignedIn = true,
                 onVpnToggle = {},
                 onVpnNavigate = {},
                 moreSettingsSubmenu = {},

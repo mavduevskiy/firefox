@@ -58,6 +58,7 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
+import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
@@ -668,10 +669,19 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     canGoBack = selectedTab?.content?.canGoBack ?: true,
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
-                                    vpnStatus = vpnStatus,
-                                     onVpnToggle = {
-                                         store.dispatch(MenuAction.ToggleVpn)
-                                     },
+                                     vpnStatus = vpnStatus,
+                                     // Drive the "Sign in" badge from auth state, not VPN status.
+                                     isSignedIn = accountState is Authenticated,
+                                      onVpnToggle = {
+                                          // Route based on FxA auth state, not VPN status.
+                                          // If not signed in, navigate to the FxA sign-in screen.
+                                          // If signed in, activate/deactivate VPN normally.
+                                          if (accountState !is Authenticated) {
+                                              store.dispatch(MenuAction.Navigate.VpnSignIn)
+                                          } else {
+                                              store.dispatch(MenuAction.ToggleVpn)
+                                          }
+                                      },
                                     onVpnNavigate = {
                                         store.dispatch(MenuAction.Navigate.IpProtectionSettings)
                                     },
