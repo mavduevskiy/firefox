@@ -15,6 +15,8 @@ import org.mozilla.fenix.components.VpnStatus
  * @property resetDate ISO 8601 string for when the monthly allowance resets, or null if unavailable.
  * @property isAutoLocation Whether automatic server location selection is enabled.
  * @property selectedLocation Display name of the currently selected VPN server location.
+ * @property isEnrollmentNeeded True when the user is signed in but Guardian has not yet enrolled
+ *   this device. The toggle routes to [VpnEnrollmentFeature.beginEnrollment] instead of activate.
  */
 data class IpProtectionState(
     val vpnStatus: VpnStatus = VpnStatus.NotAvailable,
@@ -23,4 +25,5 @@ data class IpProtectionState(
     val resetDate: String? = null,
     val isAutoLocation: Boolean = true,
     val selectedLocation: String = "United States",
+    val isEnrollmentNeeded: Boolean = false,
 )

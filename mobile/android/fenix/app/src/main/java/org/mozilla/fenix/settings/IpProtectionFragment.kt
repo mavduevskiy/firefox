@@ -51,8 +51,12 @@ class IpProtectionFragment : Fragment() {
                     IpProtectionScreen(
                         state = uiState,
                         onVpnToggle = { isChecked ->
-                            with(requireContext().components.core.ipProtectionController) {
-                                if (isChecked) activate() else deactivate()
+                            if (uiState.isEnrollmentNeeded) {
+                               requireContext().components.vpnEnrollmentFeature.beginEnrollment()
+                            } else {
+                                with(requireContext().components.core.ipProtectionController) {
+                                    if (isChecked) activate() else deactivate()
+                                }
                             }
                         },
                         onLearnMoreClick = {},
@@ -71,4 +75,5 @@ private fun VpnState.toIpProtectionState() = IpProtectionState(
     dataRemainingBytes = dataRemainingBytes,
     dataMaxBytes = dataMaxBytes,
     resetDate = resetDate,
+    isEnrollmentNeeded = isEnrollmentNeeded,
 )

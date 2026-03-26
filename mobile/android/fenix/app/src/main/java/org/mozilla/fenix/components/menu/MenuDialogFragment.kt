@@ -350,10 +350,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         this@MenuDialogFragment.dismiss()
                                     }
                                 },
-                                onVpnEnroll = {
-                                    this@MenuDialogFragment.dismiss()
-                                    components.vpnEnrollmentFeature.beginEnrollment(requireContext())
-                                },
+                                 onVpnEnroll = {
+                                     this@MenuDialogFragment.dismiss()
+                                     components.vpnEnrollmentFeature.beginEnrollment()
+                                 },
                                 scope = coroutineScope,
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,

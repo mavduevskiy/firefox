@@ -400,7 +400,14 @@ class Components(private val context: Context) {
         )
     }
 
-    val vpnEnrollmentFeature by lazyMonitored { VpnEnrollmentFeature() }
+    val vpnEnrollmentFeature by lazyMonitored {
+        VpnEnrollmentFeature(
+            browserStore = core.store,
+            tabsUseCases = useCases.tabsUseCases,
+            ipProtectionIntegration = ipProtectionIntegration,
+            appStore = appStore,
+        )
+    }
 
     val relayEligibilityStore by lazyMonitored {
         RelayEligibilityStore(middleware = listOf(ClearLastUsedMiddleware()))

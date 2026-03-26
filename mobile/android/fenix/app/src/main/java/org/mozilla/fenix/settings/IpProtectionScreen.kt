@@ -101,7 +101,7 @@ fun IpProtectionScreen(
 
             VpnToggleRow(
                 checked = state.vpnStatus.isSwitchChecked(),
-                enabled = state.vpnStatus.isToggleEnabled(),
+                enabled = state.vpnStatus.isToggleEnabled() || state.isEnrollmentNeeded,
                 onToggle = onVpnToggle,
             )
 
