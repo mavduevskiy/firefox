@@ -245,6 +245,13 @@ sealed class MenuAction : Action {
         data object VpnSignIn : Navigate()
 
         /**
+         * [Navigate] action dispatched when the user is signed in but Guardian has not yet
+         * enrolled this device (isEnrollmentNeeded == true). Opens the Guardian OAuth enrollment
+         * URL in a Fenix tab so the user can complete the VPN setup without leaving Firefox.
+         */
+        data object VpnEnroll : Navigate()
+
+        /**
          * [Navigate] action dispatched when navigating to bookmarks.
          */
         data object Bookmarks : Navigate()

@@ -350,6 +350,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         this@MenuDialogFragment.dismiss()
                                     }
                                 },
+                                onVpnEnroll = {
+                                    this@MenuDialogFragment.dismiss()
+                                    components.vpnEnrollmentFeature.beginEnrollment(requireContext())
+                                },
                                 scope = coroutineScope,
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
@@ -460,6 +464,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     val vpnStatus by remember {
                         store.stateFlow.map { it.vpnStatus }
                     }.collectAsState(initial = requireComponents.appStore.state.vpnState.vpnStatus)
+
+                    // Observe isEnrollmentNeeded from AppStore directly — it doesn't need to flow
+                    // through MenuStore since it's only used in the onVpnToggle dispatch decision.
+                    val isEnrollmentNeeded by remember {
+                        requireComponents.appStore.stateFlow.map { it.vpnState.isEnrollmentNeeded }
+                    }.collectAsState(initial = requireComponents.appStore.state.vpnState.isEnrollmentNeeded)
 
                     val recommendedAddons by remember {
                         store.stateFlow
@@ -670,18 +680,26 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
                                      vpnStatus = vpnStatus,
-                                     // Drive the "Sign in" badge from auth state, not VPN status.
-                                     isSignedIn = accountState is Authenticated,
-                                      onVpnToggle = {
-                                          // Route based on FxA auth state, not VPN status.
-                                          // If not signed in, navigate to the FxA sign-in screen.
-                                          // If signed in, activate/deactivate VPN normally.
-                                          if (accountState !is Authenticated) {
-                                              store.dispatch(MenuAction.Navigate.VpnSignIn)
-                                          } else {
-                                              store.dispatch(MenuAction.ToggleVpn)
-                                          }
-                                      },
+                                      // Drive the "Sign in" badge from auth state, not VPN status.
+                                      isSignedIn = accountState is Authenticated,
+                                      // Show "Authorize" when signed in but not yet enrolled with Guardian.
+                                      isEnrollmentNeeded = isEnrollmentNeeded,
+                                       onVpnToggle = {
+                                           when {
+                                               // Not signed in → show FxA sign-in screen.
+                                               accountState !is Authenticated ->
+                                                   store.dispatch(MenuAction.Navigate.VpnSignIn)
+
+                                               // Signed in but Guardian hasn't enrolled this device yet →
+                                               // open the Guardian OAuth tab to complete enrollment.
+                                               isEnrollmentNeeded ->
+                                                   store.dispatch(MenuAction.Navigate.VpnEnroll)
+
+                                               // Signed in and enrolled → activate / deactivate.
+                                               else ->
+                                                   store.dispatch(MenuAction.ToggleVpn)
+                                           }
+                                       },
                                     onVpnNavigate = {
                                         store.dispatch(MenuAction.Navigate.IpProtectionSettings)
                                     },

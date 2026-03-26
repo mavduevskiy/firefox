@@ -282,8 +282,8 @@ class MenuTelemetryMiddleware(
 
             MenuAction.Navigate.Summarizer,
             MenuAction.Navigate.IpProtectionSettings,
-            // VpnSignIn navigates to the FxA sign-in screen; no telemetry recorded for now.
             MenuAction.Navigate.VpnSignIn,
+            MenuAction.Navigate.VpnEnroll,
             MenuAction.ToggleVpn,
             MenuAction.InitAction,
             is MenuAction.CustomMenuItemAction,

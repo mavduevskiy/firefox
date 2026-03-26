@@ -59,7 +59,9 @@ class IpProtectionIntegration(
     fun start() {
         controller.delegate = object : IPProtectionController.Delegate {
             override fun onStateChanged(info: IPProtectionController.StateInfo) {
-                appStore.dispatch(AppAction.UpdateVpnState(info.toVpnState()))
+                val state = info.toVpnState()
+                android.util.Log.d("VPN_ENROLL", "IpProtectionIntegration.onStateChanged: proxyState=${info.proxyState} serviceState=${info.serviceState} → vpnStatus=${state.vpnStatus} isEnrollmentNeeded=${state.isEnrollmentNeeded}")
+                appStore.dispatch(AppAction.UpdateVpnState(state))
             }
         }
 
@@ -90,7 +92,27 @@ class IpProtectionIntegration(
                 result.complete(tokenInfo?.token)
             }
             result
+        }.accept { info ->
+            info?.let {
+                val state = it.toVpnState()
+                android.util.Log.d("VPN_ENROLL", "setTokenProvider result: proxyState=${it.proxyState} serviceState=${it.serviceState} → vpnStatus=${state.vpnStatus} isEnrollmentNeeded=${state.isEnrollmentNeeded}")
+                appStore.dispatch(AppAction.UpdateVpnState(state))
+            }
         }
+    }
+
+    fun retriggerEnrollment() {
+        val account = accountManager.authenticatedAccount() ?: run {
+            android.util.Log.w("VPN_ENROLL", "retriggerEnrollment: no authenticated account, skipping")
+            return
+        }
+        android.util.Log.d("VPN_ENROLL", "retriggerEnrollment: re-firing token provider to recheck Guardian entitlement")
+        setTokenProvider(account)
+    }
+
+    fun activate() {
+        android.util.Log.d("VPN_ENROLL", "activate: calling controller.activate() post-enrollment")
+        controller.activate()
     }
 
     private fun IPProtectionController.StateInfo.toVpnState() = VpnState(
@@ -98,6 +120,12 @@ class IpProtectionIntegration(
         dataRemainingBytes = remaining,
         dataMaxBytes = max,
         resetDate = resetTime,
+        // isEnrollmentNeeded is true only when the user IS signed in (FxA account present)
+        // but Guardian hasn't enrolled this device yet (service says UNAUTHENTICATED).
+        // SERVICE_STATE_UNAUTHENTICATED (2) means "eligible but not signed in to Guardian".
+        isEnrollmentNeeded = proxyState == IPProtectionController.PROXY_STATE_NOT_READY &&
+            serviceState == IPProtectionController.SERVICE_STATE_UNAUTHENTICATED &&
+            accountManager.authenticatedAccount() != null,
     )
 
     private fun proxyStateToVpnStatus(proxyState: Int): VpnStatus = when (proxyState) {

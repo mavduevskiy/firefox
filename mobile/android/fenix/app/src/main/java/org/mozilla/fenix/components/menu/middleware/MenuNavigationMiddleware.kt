@@ -54,6 +54,8 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * @param webAppUseCases [WebAppUseCases] used for adding items to the home screen.
  * @param settings Used to check [Settings] when adding items to the home screen.
  * @param onDismiss Callback invoked to dismiss the menu dialog.
+ * @param onVpnEnroll Callback invoked when the user needs to complete Guardian enrollment.
+ *   The lambda dismisses the menu and starts [VpnEnrollmentFeature.beginEnrollment].
  * @param scope [CoroutineScope] used to launch coroutines.
  * @param customTab [CustomTabSessionState] used for sharing custom tab.
  * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] used
@@ -69,6 +71,7 @@ class MenuNavigationMiddleware(
     private val webAppUseCases: WebAppUseCases,
     private val settings: Settings,
     private val onDismiss: suspend () -> Unit,
+    private val onVpnEnroll: () -> Unit = {},
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val customTab: CustomTabSessionState?,
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
@@ -134,6 +137,8 @@ class MenuNavigationMiddleware(
                         entrypoint = FenixFxAEntryPoint.HomeMenu,
                     ),
                 )
+
+                is MenuAction.Navigate.VpnEnroll -> onVpnEnroll()
 
                 is MenuAction.Navigate.InstalledAddonDetails -> navController.nav(
                     R.id.menuDialogFragment,

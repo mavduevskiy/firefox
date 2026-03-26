@@ -122,6 +122,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param vpnStatus The current [VpnStatus] of the VPN proxy.
  * @param isSignedIn Whether the user is signed in to a Firefox Account. Controls whether the
  *   VPN badge shows the connection state or a "Sign in" prompt.
+ * @param isEnrollmentNeeded Whether the user is signed in but Guardian hasn't enrolled this
+ *   device yet. When true the badge shows "Authorize" instead of the VPN state.
  * @param onVpnToggle Invoked when the user taps the VPN toggle area to activate or deactivate the VPN.
  * @param onVpnNavigate Invoked when the user taps the chevron to open the IP Protection settings screen.
  * @param moreSettingsSubmenu The content of more menu item.
@@ -177,6 +179,7 @@ fun MainMenu(
     extensionsMenuItemDescription: String?,
     vpnStatus: VpnStatus,
     isSignedIn: Boolean,
+    isEnrollmentNeeded: Boolean,
     onVpnToggle: () -> Unit,
     onVpnNavigate: () -> Unit,
     moreSettingsSubmenu: @Composable () -> Unit,
@@ -269,6 +272,7 @@ fun MainMenu(
             VpnMenuItem(
                 vpnStatus = vpnStatus,
                 isSignedIn = isSignedIn,
+                isEnrollmentNeeded = isEnrollmentNeeded,
                 onToggle = onVpnToggle,
                 onNavigate = onVpnNavigate,
             )
@@ -786,6 +790,7 @@ private fun MenuDialogPreview(
                 onShareButtonClick = {},
                 vpnStatus = VpnStatus.NotAvailable,
                 isSignedIn = false,
+                isEnrollmentNeeded = false,
                 onVpnToggle = {},
                 onVpnNavigate = {},
                 moreSettingsSubmenu = {},
@@ -854,6 +859,7 @@ private fun MenuDialogPrivatePreview(
                 onShareButtonClick = {},
                 vpnStatus = VpnStatus.Active,
                 isSignedIn = true,
+                isEnrollmentNeeded = false,
                 onVpnToggle = {},
                 onVpnNavigate = {},
                 moreSettingsSubmenu = {},

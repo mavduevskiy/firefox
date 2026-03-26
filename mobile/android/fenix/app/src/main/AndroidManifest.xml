@@ -669,6 +669,17 @@
             android:taskAffinity=""
             android:windowSoftInputMode="adjustResize|stateAlwaysHidden" />
 
+        <activity android:name=".vpn.VpnEnrollmentReceiverActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".vpn.VpnEnrollmentActivity"
+            android:autoRemoveFromRecents="false"
+            android:configChanges="keyboard|keyboardHidden|mcc|mnc|orientation|screenSize|layoutDirection|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden" />
+
         <activity android:name=".settings.account.AuthIntentReceiverActivity"
             android:exported="false" />
 

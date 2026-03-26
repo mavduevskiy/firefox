@@ -822,6 +822,9 @@
      <!-- Badge shown on the VPN menu item when the user is not signed in to Firefox Account.
           Tapping the item with this badge routes to the FxA sign-in screen. -->
      <string name="vpn_menu_sign_in" translatable="false">Sign in</string>
+     <!-- Badge shown on the VPN menu item when the user is signed in but Guardian has not yet
+          enrolled this device. Tapping opens the Guardian OAuth authorization tab. -->
+     <string name="vpn_menu_authorize" translatable="false">Authorize</string>
      <!-- Badge text in the browser menu when the VPN is connecting -->
      <string name="ip_protection_menu_connecting" translatable="false">Connecting…</string>
     <!-- Badge text in the browser menu when the VPN is paused (data quota exhausted) -->

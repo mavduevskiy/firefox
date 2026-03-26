@@ -12,10 +12,13 @@ package org.mozilla.fenix.components
  * @property dataRemainingBytes Remaining monthly data allowance in bytes, or -1 if unavailable.
  * @property dataMaxBytes Maximum monthly data allowance in bytes, or -1 if unavailable.
  * @property resetDate ISO 8601 string for when the monthly allowance resets, or null if unavailable.
+ * @property isEnrollmentNeeded True when the user is authenticated with Firefox Account but Guardian
+ *   has not yet enrolled this device for the VPN proxy
  */
 data class VpnState(
     val vpnStatus: VpnStatus = VpnStatus.NotAvailable,
     val dataRemainingBytes: Long = -1L,
     val dataMaxBytes: Long = -1L,
     val resetDate: String? = null,
+    val isEnrollmentNeeded: Boolean = false,
 )
