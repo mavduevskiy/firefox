@@ -21,6 +21,8 @@ import mozilla.components.concept.engine.translate.TranslationsRuntime
 import mozilla.components.concept.engine.utils.EngineVersion
 import mozilla.components.concept.engine.webextension.WebExtensionRuntime
 import mozilla.components.concept.engine.webnotifications.WebNotificationDelegate
+import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.webpush.WebPushDelegate
 import mozilla.components.concept.engine.webpush.WebPushHandler
 import org.json.JSONObject
@@ -241,6 +243,22 @@ interface Engine :
     fun registerWebPushDelegate(
         webPushDelegate: WebPushDelegate,
     ): WebPushHandler = throw UnsupportedOperationException("Web Push support is not available in this engine")
+
+    /**
+     * Registers an [IPProtectionDelegate] to be notified of IP protection state changes.
+     *
+     * @return An [IPProtectionHandler] to control the IP protection proxy.
+     */
+    fun registerIPProtectionDelegate(
+        delegate: IPProtectionDelegate,
+    ): IPProtectionHandler = throw UnsupportedOperationException("IP Protection is not available in this engine")
+
+    /**
+     * Un-registers the attached [IPProtectionDelegate] if one was added with
+     * [registerIPProtectionDelegate].
+     */
+    fun unregisterIPProtectionDelegate(): Unit =
+        throw UnsupportedOperationException("IP Protection is not available in this engine")
 
     /**
      * Registers an [ActivityDelegate] to be notified on activity events that are needed by the engine.

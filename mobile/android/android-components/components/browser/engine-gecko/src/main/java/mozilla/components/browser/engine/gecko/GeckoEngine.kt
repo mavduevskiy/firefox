@@ -21,6 +21,8 @@ import mozilla.components.browser.engine.gecko.ext.getEtpCategory
 import mozilla.components.browser.engine.gecko.ext.getEtpLevel
 import mozilla.components.browser.engine.gecko.ext.getStrictSocialTrackingProtection
 import mozilla.components.browser.engine.gecko.integration.LocaleSettingUpdater
+import mozilla.components.browser.engine.gecko.ipprotection.GeckoIPProtectionDelegate
+import mozilla.components.browser.engine.gecko.ipprotection.GeckoIPProtectionHandler
 import mozilla.components.browser.engine.gecko.mediaquery.from
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
 import mozilla.components.browser.engine.gecko.preferences.DefaultGeckoPreferenceAccessor
@@ -57,6 +59,8 @@ import mozilla.components.concept.engine.content.blocking.TrackerLog
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionExceptionStorage
 import mozilla.components.concept.engine.fission.WebContentIsolationStrategy
 import mozilla.components.concept.engine.history.HistoryTrackingDelegate
+import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
 import mozilla.components.concept.engine.preferences.Branch
 import mozilla.components.concept.engine.preferences.BrowserPrefObserverDelegate
@@ -148,6 +152,7 @@ class GeckoEngine(
     }
 
     private var webPushHandler: WebPushHandler? = null
+    private var ipProtectionHandler: IPProtectionHandler? = null
 
     init {
         runtime.delegate = GeckoRuntime.Delegate {
@@ -781,6 +786,25 @@ class GeckoEngine(
         }
 
         return requireNotNull(webPushHandler)
+    }
+
+    /**
+     * See [Engine.registerIPProtectionDelegate].
+     */
+    override fun registerIPProtectionDelegate(delegate: IPProtectionDelegate): IPProtectionHandler {
+        val geckoController = runtime.getIPProtectionController()
+        geckoController.setDelegate(GeckoIPProtectionDelegate(delegate))
+        if (ipProtectionHandler == null) {
+            ipProtectionHandler = GeckoIPProtectionHandler(geckoController)
+        }
+        return requireNotNull(ipProtectionHandler)
+    }
+
+    /**
+     * See [Engine.unregisterIPProtectionDelegate].
+     */
+    override fun unregisterIPProtectionDelegate() {
+        runtime.getIPProtectionController().setDelegate(null)
     }
 
     /**

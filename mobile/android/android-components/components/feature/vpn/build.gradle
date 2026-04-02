@@ -15,13 +15,13 @@ android {
 
 dependencies {
     implementation project(':components:browser-state')
+    implementation project(':components:concept-engine')
     implementation project(':components:concept-sync')
     implementation project(':components:feature-tabs')
     implementation project(':components:lib-state')
     implementation project(':components:service-firefox-accounts')
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
-    implementation project(':geckoview')
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

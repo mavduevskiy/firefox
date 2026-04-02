@@ -38,6 +38,7 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.feature.addons.ui.AddonFilePicker
+import mozilla.components.feature.vpn.VpnStatus
 import mozilla.components.service.fxrelay.eligibility.Eligible
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.showKeyboard
@@ -71,7 +72,6 @@ import org.mozilla.fenix.settings.account.AccountUiView
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.geckoview.IPProtectionController
 import kotlin.system.exitProcess
 import org.mozilla.fenix.GleanMetrics.Settings as SettingsMetrics
 
@@ -837,16 +837,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setupIpProtectionPreferences() {
         val pref = requirePreference<Preference>(R.string.pref_key_ip_protection_settings)
-        val runtime = requireComponents.core.geckoRuntime
-        runtime.getIPProtectionController().state.accept { stateInfo ->
-            if (stateInfo != null) {
-                pref.summary = when (stateInfo.proxyState) {
-                    IPProtectionController.PROXY_STATE_ACTIVE,
-                    IPProtectionController.PROXY_STATE_ACTIVATING,
-                    -> getString(R.string.preferences_ip_protection_on)
-                    else -> getString(R.string.preferences_ip_protection_off)
-                }
-            }
+        pref.summary = when (requireComponents.vpnStore.state.vpnStatus) {
+            VpnStatus.Active, VpnStatus.Activating ->
+                getString(R.string.preferences_ip_protection_on)
+            else -> getString(R.string.preferences_ip_protection_off)
         }
     }
 

@@ -397,7 +397,7 @@ class Components(private val context: Context) {
 
     val vpnFeature by lazyMonitored {
         mozilla.components.feature.vpn.DefaultVpnFeature(
-            controller = core.ipProtectionController,
+            engine = core.engine,
             accountManager = backgroundServices.accountManager,
             store = vpnStore,
             browserStore = core.store,

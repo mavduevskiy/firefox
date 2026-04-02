@@ -287,10 +287,6 @@ class Core(
         name = ReportSiteDomainsRepository.REPORT_SITE_DOMAINS_REPOSITORY_NAME,
     )
 
-    val ipProtectionController by lazyMonitored {
-        geckoRuntime.getIPProtectionController()
-    }
-
     val cookieBannersStorage by lazyMonitored {
         GeckoCookieBannersStorage(
             geckoRuntime,

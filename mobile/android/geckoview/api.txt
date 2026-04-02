@@ -102,7 +102,7 @@ import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.HandlerThread;
-import org.mozilla.geckoview.IPProtectionController;
+import org.mozilla.geckoview.DefaultIPProtectionController;
 import org.mozilla.geckoview.Image;
 import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;

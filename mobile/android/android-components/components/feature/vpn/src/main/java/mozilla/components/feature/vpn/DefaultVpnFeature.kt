@@ -17,6 +17,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.Engine
+import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
@@ -24,8 +27,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import org.mozilla.geckoview.GeckoResult
-import org.mozilla.geckoview.IPProtectionController
 
 private const val TAG = "VPN_ENROLL"
 private const val VPN_TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
@@ -33,50 +34,49 @@ private const val VPN_TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
 /**
  * AC feature that brings VPN proxy functionality to Android.
  *
- * @param controller [IPProtectionController] a bridge to [org.mozilla.geckoview.GeckoView].
+ * @param engine [Engine] used to register the IP protection delegate and obtain the handler.
  * @param accountManager [FxaAccountManager] used to supply FxA tokens to the proxy Guardian.
  * @param store [VpnStore] holds the feature state.
  * @param browserStore [BrowserStore] to observe enrollment tab URL changes.
  * @param tabsUseCases [TabsUseCases] to open/remove the enrollment tab.
  */
 class DefaultVpnFeature(
-    private val controller: IPProtectionController,
+    private val engine: Engine,
     private val accountManager: FxaAccountManager,
     private val store: VpnStore,
     private val browserStore: BrowserStore,
     private val tabsUseCases: TabsUseCases,
 ) : LifecycleAwareFeature, VpnFeature {
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var handler: IPProtectionHandler? = null
     private var enrollmentTabId: String? = null
     private var enrollmentObservationJob: Job? = null
 
     private val accountObserver = object : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-            // FxaAccountManager callbacks fire on a background thread; IPProtectionController
-            // requires the UI thread, so dispatch via the main-thread scope.
             scope.launch { setTokenProvider(account) }
         }
 
         override fun onLoggedOut() {
-            scope.launch { controller.setTokenProvider(null) }
+            scope.launch { handler?.setTokenProvider(null) }
         }
 
         override fun onAuthenticationProblems() {
-            scope.launch { controller.setTokenProvider(null) }
+            scope.launch { handler?.setTokenProvider(null) }
         }
     }
 
     override fun start() {
-        controller.delegate = object : IPProtectionController.Delegate {
-            override fun onStateChanged(info: IPProtectionController.StateInfo) {
+        handler = engine.registerIPProtectionDelegate(object : IPProtectionDelegate {
+            override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
                 val state = info.toVpnState()
-                Log.d(TAG, "onStateChanged: proxyState=${info.proxyState} serviceState=${info.serviceState}" +
-                    " remaining=${info.remaining} max=${info.max} resetTime=${info.resetTime}" +
-                    " lastError=${info.lastError} → vpnStatus=${state.vpnStatus}" +
-                    " isEnrollmentNeeded=${state.isEnrollmentNeeded}")
+                Log.d(TAG, "onStateChanged: proxyState=${info.proxyState}" +
+                    " serviceState=${info.serviceState}" +
+                    " remaining=${info.remaining} max=${info.max}" +
+                    " → vpnStatus=${state.vpnStatus} isEnrollmentNeeded=${state.isEnrollmentNeeded}")
                 store.dispatch(VpnAction.UpdateState(state))
             }
-        }
+        })
 
         accountManager.register(accountObserver)
 
@@ -84,24 +84,22 @@ class DefaultVpnFeature(
         if (account != null) {
             setTokenProvider(account)
         } else {
-            controller.setTokenProvider(null)
+            handler?.setTokenProvider(null)
         }
     }
 
     override fun stop() {
         accountManager.unregister(accountObserver)
-        controller.delegate = null
-        controller.setTokenProvider(null)
+        engine.unregisterIPProtectionDelegate()
+        handler?.setTokenProvider(null)
+        handler = null
         cancelEnrollment()
     }
 
-    /** Activates the VPN proxy. */
-    override fun activate() { controller.activate() }
+    override fun activate() { handler?.activate() }
 
-    /** Deactivates the VPN proxy. */
-    override fun deactivate() { controller.deactivate() }
+    override fun deactivate() { handler?.deactivate() }
 
-    /** Starts authorizing vpn service */
     override fun beginEnrollment() {
         cancelEnrollment()
         Log.d(TAG, "beginEnrollment: opening background tab → $GUARDIAN_ENROLLMENT_URL")
@@ -109,7 +107,6 @@ class DefaultVpnFeature(
         enrollmentTabId = tabId
         observeEnrollmentTab(tabId)
     }
-
 
     private fun cancelEnrollment() {
         val tabId = enrollmentTabId ?: return
@@ -140,8 +137,6 @@ class DefaultVpnFeature(
         enrollmentObservationJob = null
         enrollmentTabId = null
         tabsUseCases.removeTab(tabId)
-
-        // Re-fire the token provider to trigger a fresh updateEntitlement() in Gecko JS.
         retriggerEnrollment()
 
         scope.launch {
@@ -168,8 +163,6 @@ class DefaultVpnFeature(
         tabsUseCases.removeTab(tabId)
     }
 
-
-    /** Deactivates the VPN proxy. */
     override fun retriggerEnrollment() {
         val account = accountManager.authenticatedAccount() ?: return
         Log.d(TAG, "retriggerEnrollment: re-firing token provider")
@@ -177,43 +170,43 @@ class DefaultVpnFeature(
     }
 
     private fun setTokenProvider(account: OAuthAccount) {
-        controller.setTokenProvider {
-            val result = GeckoResult<String>()
-            scope.launch {
-                val tokenInfo = withContext(Dispatchers.IO) {
-                    runCatching { account.getAccessToken(VPN_TOKEN_SCOPE) }.getOrNull()
+        handler?.setTokenProvider(
+            provider = object : IPProtectionHandler.TokenProvider {
+                override fun getToken(onComplete: (String?) -> Unit) {
+                    scope.launch {
+                        val tokenInfo = withContext(Dispatchers.IO) {
+                            runCatching { account.getAccessToken(VPN_TOKEN_SCOPE) }.getOrNull()
+                        }
+                        onComplete(tokenInfo?.token)
+                    }
                 }
-                println("$this Spamming token!")
-                result.complete(tokenInfo?.token)
-            }
-            result
-        }.accept { info ->
-            info?.let {
-                val state = it.toVpnState()
-                Log.d(TAG, "setTokenProvider result: proxyState=${it.proxyState} serviceState=${it.serviceState}" +
-                    " remaining=${it.remaining} max=${it.max} → vpnStatus=${state.vpnStatus}" +
+            },
+            onInitialState = { info ->
+                val state = info.toVpnState()
+                Log.d(TAG, "setTokenProvider result: proxyState=${info.proxyState} serviceState=${info.serviceState}" +
+                    " remaining=${info.remaining} max=${info.max} → vpnStatus=${state.vpnStatus}" +
                     " isEnrollmentNeeded=${state.isEnrollmentNeeded}")
                 store.dispatch(VpnAction.UpdateState(state))
-            }
-        }
+            },
+        )
     }
 
-    private fun IPProtectionController.StateInfo.toVpnState() = VpnState(
+    private fun IPProtectionHandler.StateInfo.toVpnState() = VpnState(
         vpnStatus = proxyStateToVpnStatus(proxyState),
         dataRemainingBytes = remaining,
         dataMaxBytes = max,
         resetDate = resetTime,
-        isEnrollmentNeeded = proxyState == IPProtectionController.PROXY_STATE_NOT_READY &&
-            serviceState == IPProtectionController.SERVICE_STATE_UNAUTHENTICATED &&
+        isEnrollmentNeeded = proxyState == IPProtectionHandler.StateInfo.PROXY_STATE_NOT_READY &&
+            serviceState == IPProtectionHandler.StateInfo.SERVICE_STATE_UNAUTHENTICATED &&
             accountManager.authenticatedAccount() != null,
     )
 
     private fun proxyStateToVpnStatus(proxyState: Int): VpnStatus = when (proxyState) {
-        IPProtectionController.PROXY_STATE_ACTIVE -> VpnStatus.Active
-        IPProtectionController.PROXY_STATE_ACTIVATING -> VpnStatus.Activating
-        IPProtectionController.PROXY_STATE_READY -> VpnStatus.Ready
-        IPProtectionController.PROXY_STATE_PAUSED -> VpnStatus.Paused
-        IPProtectionController.PROXY_STATE_ERROR -> VpnStatus.Error
+        IPProtectionHandler.StateInfo.PROXY_STATE_ACTIVE -> VpnStatus.Active
+        IPProtectionHandler.StateInfo.PROXY_STATE_ACTIVATING -> VpnStatus.Activating
+        IPProtectionHandler.StateInfo.PROXY_STATE_READY -> VpnStatus.Ready
+        IPProtectionHandler.StateInfo.PROXY_STATE_PAUSED -> VpnStatus.Paused
+        IPProtectionHandler.StateInfo.PROXY_STATE_ERROR -> VpnStatus.Error
         else -> VpnStatus.NotAvailable
     }
 
