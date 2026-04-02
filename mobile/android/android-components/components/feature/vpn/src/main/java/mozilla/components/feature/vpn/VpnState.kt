@@ -2,18 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.components
+package mozilla.components.feature.vpn
+
+import mozilla.components.lib.state.State
 
 /**
- * Holds all VPN-related state surfaced by [IPProtectionController] and kept in [AppStore]
- * as the single source of truth for the whole app.
+ * Holds all VPN-related state surfaced by the GeckoView VPN proxy.
  *
  * @property vpnStatus Current connection state of the VPN proxy.
  * @property dataRemainingBytes Remaining monthly data allowance in bytes, or -1 if unavailable.
  * @property dataMaxBytes Maximum monthly data allowance in bytes, or -1 if unavailable.
  * @property resetDate ISO 8601 string for when the monthly allowance resets, or null if unavailable.
  * @property isEnrollmentNeeded True when the user is authenticated with Firefox Account but Guardian
- *   has not yet enrolled this device for the VPN proxy
+ * has not yet enrolled.
  */
 data class VpnState(
     val vpnStatus: VpnStatus = VpnStatus.NotAvailable,
@@ -21,4 +22,4 @@ data class VpnState(
     val dataMaxBytes: Long = -1L,
     val resetDate: String? = null,
     val isEnrollmentNeeded: Boolean = false,
-)
+) : State

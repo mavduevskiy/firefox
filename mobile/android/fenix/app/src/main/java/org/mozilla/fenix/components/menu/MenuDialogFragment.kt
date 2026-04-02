@@ -306,8 +306,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         ),
                         middleware = listOf(
                             MenuDialogMiddleware(
-                                ipProtectionController = components.core.ipProtectionController,
+                                vpnFeature = components.vpnFeature,
                                 appStore = appStore,
+                                vpnStore = components.vpnStore,
                                 addonManager = components.addonManager,
                                 settings = settings,
                                 summarizeMenuSettings = components.core.summarizeFeatureSettings,
@@ -352,7 +353,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 },
                                  onVpnEnroll = {
                                      this@MenuDialogFragment.dismiss()
-                                     components.vpnEnrollmentFeature.beginEnrollment()
+                                     components.vpnFeature.beginEnrollment()
                                  },
                                 scope = coroutineScope,
                                 customTab = customTab,
@@ -452,24 +453,24 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         view = this,
                     )
 
-                    vpnMenuBinding.set(
-                        feature = VpnMenuBinding(
-                            appStore = requireComponents.appStore,
-                            menuStore = store,
-                        ),
+                     vpnMenuBinding.set(
+                         feature = VpnMenuBinding(
+                             vpnStore = requireComponents.vpnStore,
+                             menuStore = store,
+                         ),
                         owner = this@MenuDialogFragment,
                         view = this,
                     )
 
                     val vpnStatus by remember {
                         store.stateFlow.map { it.vpnStatus }
-                    }.collectAsState(initial = requireComponents.appStore.state.vpnState.vpnStatus)
+                    }.collectAsState(initial = requireComponents.vpnStore.state.vpnStatus)
 
-                    // Observe isEnrollmentNeeded from AppStore directly — it doesn't need to flow
-                    // through MenuStore since it's only used in the onVpnToggle dispatch decision.
+                    // Observe isEnrollmentNeeded from VpnStore directly — it doesn't need to
+                    // flow through MenuStore since it's only used in the onVpnToggle routing.
                     val isEnrollmentNeeded by remember {
-                        requireComponents.appStore.stateFlow.map { it.vpnState.isEnrollmentNeeded }
-                    }.collectAsState(initial = requireComponents.appStore.state.vpnState.isEnrollmentNeeded)
+                        requireComponents.vpnStore.stateFlow.map { it.isEnrollmentNeeded }
+                    }.collectAsState(initial = requireComponents.vpnStore.state.isEnrollmentNeeded)
 
                     val recommendedAddons by remember {
                         store.stateFlow

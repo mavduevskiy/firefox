@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.findCustomTab
+import mozilla.components.feature.vpn.DefaultVpnFeature
+import mozilla.components.feature.vpn.VpnStatus
 import mozilla.components.lib.state.ext.flow
-import org.mozilla.fenix.components.VpnEnrollmentFeature
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.ext.components
 
@@ -46,8 +46,8 @@ class VpnEnrollmentActivity : ExternalAppBrowserActivity() {
                 .collect { url ->
                     Log.d(TAG, "tab navigated → $url")
                     when {
-                        url.startsWith(VpnEnrollmentFeature.GUARDIAN_SUCCESS_URL) -> onEnrollmentSuccess()
-                        url.startsWith(VpnEnrollmentFeature.GUARDIAN_ERROR_URL) -> onEnrollmentError(url)
+                        url.startsWith(DefaultVpnFeature.GUARDIAN_SUCCESS_URL) -> onEnrollmentSuccess()
+                        url.startsWith(DefaultVpnFeature.GUARDIAN_ERROR_URL) -> onEnrollmentError(url)
                     }
                 }
         }
@@ -55,25 +55,25 @@ class VpnEnrollmentActivity : ExternalAppBrowserActivity() {
 
     private fun onEnrollmentSuccess() {
         Log.d(TAG, "onSuccess: Guardian enrollment complete — triggering entitlement check")
-        components.ipProtectionIntegration.retriggerEnrollment()
+        components.vpnFeature.retriggerEnrollment()
 
-        val currentStatus = components.appStore.state.vpnState.vpnStatus
+        val currentStatus = components.vpnStore.state.vpnStatus
         Log.d(TAG, "onSuccess: current vpnStatus=$currentStatus")
         if (currentStatus == VpnStatus.Ready) {
             Log.d(TAG, "onSuccess: already Ready — activating VPN now")
-            components.ipProtectionIntegration.activate()
+            components.vpnFeature.activate()
             finish()
             return
         }
 
         lifecycleScope.launch {
-            components.appStore.flow()
-                .map { it.vpnState.vpnStatus }
+            components.vpnStore.flow()
+                .map { it.vpnStatus }
                 .filter { it == VpnStatus.Ready }
                 .first()
 
             Log.d(TAG, "onSuccess: proxy reached Ready — activating VPN")
-            components.ipProtectionIntegration.activate()
+            components.vpnFeature.activate()
             finish()
         }
     }

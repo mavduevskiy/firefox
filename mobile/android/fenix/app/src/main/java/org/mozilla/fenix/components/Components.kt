@@ -16,6 +16,7 @@ import mozilla.components.feature.addons.amo.AMOAddonsProvider
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.autofill.AutofillConfiguration
+import mozilla.components.feature.vpn.VpnStore
 import mozilla.components.lib.crash.store.CrashAction
 import mozilla.components.lib.crash.store.CrashMiddleware
 import mozilla.components.lib.integrity.googleplay.GooglePlayIntegrityClient
@@ -392,20 +393,15 @@ class Components(private val context: Context) {
         Ads(context = context)
     }
 
-    val ipProtectionIntegration by lazyMonitored {
-        IpProtectionIntegration(
+    val vpnStore by lazyMonitored { VpnStore() }
+
+    val vpnFeature by lazyMonitored {
+        mozilla.components.feature.vpn.DefaultVpnFeature(
             controller = core.ipProtectionController,
             accountManager = backgroundServices.accountManager,
-            appStore = appStore,
-        )
-    }
-
-    val vpnEnrollmentFeature by lazyMonitored {
-        VpnEnrollmentFeature(
+            store = vpnStore,
             browserStore = core.store,
             tabsUseCases = useCases.tabsUseCases,
-            ipProtectionIntegration = ipProtectionIntegration,
-            appStore = appStore,
         )
     }
 

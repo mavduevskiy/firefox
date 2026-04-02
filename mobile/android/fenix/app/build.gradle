@@ -564,6 +564,7 @@ dependencies {
     implementation project(':components:browser-toolbar')
     implementation project(':components:feature-accounts')
     implementation project(':components:feature-accounts-push')
+    implementation project(':components:feature-vpn')
     implementation project(':components:feature-addons')
     implementation project(':components:feature-app-links')
     implementation project(':components:feature-autofill')

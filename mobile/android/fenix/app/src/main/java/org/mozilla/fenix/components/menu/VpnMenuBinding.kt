@@ -8,30 +8,29 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import mozilla.components.feature.vpn.VpnState
+import mozilla.components.feature.vpn.VpnStore
 import mozilla.components.lib.state.helpers.AbstractBinding
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuStore
 
 /**
- * Wires up the VPN state in [AppStore] with [MenuStore], so that we have the
- * right state in the menu UI.
+ * Bridges [VpnStore] with [MenuStore] so the menu badge reflects live VPN state.
  *
- * @param appStore The [AppStore] to observe for [AppState.vpnState] changes.
+ * @param vpnStore The [VpnStore] to observe for [VpnState.vpnStatus] changes.
  * @param menuStore The [MenuStore] to dispatch [MenuAction.UpdateVpnStatus] into.
  * @param mainDispatcher The [CoroutineDispatcher] to collect on.
  */
 class VpnMenuBinding(
-    appStore: AppStore,
+    vpnStore: VpnStore,
     private val menuStore: MenuStore,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : AbstractBinding<AppState>(appStore, mainDispatcher) {
+) : AbstractBinding<VpnState>(vpnStore, mainDispatcher) {
 
-    override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { it.vpnState.vpnStatus }
+    override suspend fun onState(flow: Flow<VpnState>) {
+        flow.distinctUntilChangedBy { it.vpnStatus }
             .collect { state ->
-                menuStore.dispatch(MenuAction.UpdateVpnStatus(state.vpnState.vpnStatus))
+                menuStore.dispatch(MenuAction.UpdateVpnStatus(state.vpnStatus))
             }
     }
 }

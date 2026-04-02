@@ -67,6 +67,8 @@ import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.TrackingProtectionUseCases
+import mozilla.components.feature.vpn.VpnStatus
+import mozilla.components.feature.vpn.VpnStore
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
@@ -96,7 +98,6 @@ import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.CurrentTabClosed
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
@@ -186,6 +187,7 @@ internal sealed class PageEndActionsInteractions(override val source: Source) : 
  *
  * @param uiContext [Context] used for various system interactions.
  * @param appStore [AppStore] allowing to integrate with other features of the applications.
+ * @param vpnStore [VpnStore] used to observe VPN status for the address bar pill.
  * @param browserScreenStore [BrowserScreenStore] used for integration with other browser screen functionalities.
  * @param browserStore [BrowserStore] to sync from.
  * @param permissionsStorage [SitePermissionsStorage] to find currently selected tab site permissions.
@@ -213,6 +215,7 @@ internal sealed class PageEndActionsInteractions(override val source: Source) : 
 class BrowserToolbarMiddleware(
     private val uiContext: Context,
     private val appStore: AppStore,
+    private val vpnStore: VpnStore,
     private val browserScreenStore: BrowserScreenStore,
     private val browserStore: BrowserStore,
     private val permissionsStorage: SitePermissionsStorage,
@@ -676,7 +679,7 @@ class BrowserToolbarMiddleware(
     private fun buildStartPageActions(): List<Action> {
         // When VPN is active, replace the standard site-security icon with the animated VPN pill.
         // Reader mode hides page actions entirely, so we respect that gate here too.
-        if (appStore.state.vpnState.vpnStatus == VpnStatus.Active &&
+        if (vpnStore.state.vpnStatus == VpnStatus.Active &&
             !browserScreenStore.state.readerModeStatus.isActive
         ) {
             val vpnIcon = AppCompatResources.getDrawable(uiContext, R.drawable.ic_vpn_on)
@@ -1077,8 +1080,8 @@ class BrowserToolbarMiddleware(
     // Refreshes the start page actions when VPN status changes so the pill appears or
     // disappears immediately even if the user hasn't navigated to a new page.
     private fun observeVpnStatusUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        appStore.observeWhileActive {
-            distinctUntilChangedBy { it.vpnState.vpnStatus }
+        vpnStore.observeWhileActive {
+            distinctUntilChangedBy { it.vpnStatus }
                 .collect {
                     updateStartPageActions(store)
                 }

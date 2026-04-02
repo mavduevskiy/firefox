@@ -15,11 +15,10 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
+import mozilla.components.feature.vpn.VpnState
 import mozilla.components.lib.state.ext.flow
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.VpnState
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -39,9 +38,8 @@ class IpProtectionFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         viewLifecycleOwner.lifecycleScope.launch {
-            requireContext().components.appStore.flow()
-                .distinctUntilChangedBy { it.vpnState }
-                .collect { state -> uiState = state.vpnState.toIpProtectionState() }
+            requireContext().components.vpnStore.flow()
+                .collect { state -> uiState = state.toIpProtectionState() }
         }
 
         return ComposeView(requireContext()).apply {
@@ -52,9 +50,9 @@ class IpProtectionFragment : Fragment() {
                         state = uiState,
                         onVpnToggle = { isChecked ->
                             if (uiState.isEnrollmentNeeded) {
-                               requireContext().components.vpnEnrollmentFeature.beginEnrollment()
+                               requireContext().components.vpnFeature.beginEnrollment()
                             } else {
-                                with(requireContext().components.core.ipProtectionController) {
+                                with(requireContext().components.vpnFeature) {
                                     if (isChecked) activate() else deactivate()
                                 }
                             }

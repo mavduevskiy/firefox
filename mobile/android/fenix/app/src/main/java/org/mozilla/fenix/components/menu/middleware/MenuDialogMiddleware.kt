@@ -25,13 +25,15 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import mozilla.components.feature.vpn.VpnFeature
+import mozilla.components.feature.vpn.VpnStatus
+import mozilla.components.feature.vpn.VpnStore
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
@@ -47,14 +49,14 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.utils.LastSavedFolderCache
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.geckoview.IPProtectionController
 
 /**
  * [Middleware] implementation for handling [MenuAction] and managing the [MenuState] for the menu
  * dialog.
  *
- * @param ipProtectionController The [IPProtectionController] used to activate or deactivate the VPN proxy.
+ * @param vpnFeature The [VpnFeature] used to activate or deactivate the VPN proxy.
  * @param appStore The [AppStore] used to dispatch actions to update the global state.
+ * @param vpnStore The [VpnStore] used to read the current VPN state when the menu opens.
  * @param addonManager An instance of the [AddonManager] used to provide access to [Addon]s.
  * @param settings An instance of [Settings] to read and write to the [SharedPreferences]
  * properties.
@@ -85,8 +87,9 @@ import org.mozilla.geckoview.IPProtectionController
  */
 @Suppress("LongParameterList", "CyclomaticComplexMethod")
 class MenuDialogMiddleware(
-    private val ipProtectionController: IPProtectionController,
+    private val vpnFeature: VpnFeature,
     private val appStore: AppStore,
+    private val vpnStore: VpnStore,
     private val addonManager: AddonManager,
     private val settings: Settings,
     private val summarizeMenuSettings: SummarizationFeatureDiscoveryConfiguration,
@@ -158,7 +161,7 @@ class MenuDialogMiddleware(
     }
 
     private fun setupVpnState(store: Store<MenuState, MenuAction>) {
-        store.dispatch(MenuAction.UpdateVpnStatus(appStore.state.vpnState.vpnStatus))
+        store.dispatch(MenuAction.UpdateVpnStatus(vpnStore.state.vpnStatus))
     }
 
     private fun setupPageSummarizationState(store: Store<MenuState, MenuAction>) {
@@ -458,8 +461,8 @@ class MenuDialogMiddleware(
 
      private fun toggleVpn(store: Store<MenuState, MenuAction>) {
          when (store.state.vpnStatus) {
-             VpnStatus.Active, VpnStatus.Activating -> ipProtectionController.deactivate()
-             else -> ipProtectionController.activate()
+             VpnStatus.Active, VpnStatus.Activating -> vpnFeature.deactivate()
+             else -> vpnFeature.activate()
          }
      }
 

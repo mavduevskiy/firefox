@@ -30,8 +30,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.theme.surfaceDimVariant
+import mozilla.components.feature.vpn.VpnStatus
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -63,9 +63,9 @@ internal fun VpnMenuItem(
     onNavigate: () -> Unit,
 ) {
     val badgeText = when {
-        !isSignedIn        -> stringResource(R.string.vpn_menu_sign_in)
+        !isSignedIn -> stringResource(R.string.vpn_menu_sign_in)
         isEnrollmentNeeded -> stringResource(R.string.vpn_menu_authorize)
-        else               -> vpnStatusBadgeText(vpnStatus)
+        else -> vpnStatusBadgeText(vpnStatus)
     }
     val menuItemState = vpnStatusMenuItemState(vpnStatus)
 
@@ -145,7 +145,13 @@ private fun VpnMenuItemOffPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.NotAvailable, isSignedIn = false, isEnrollmentNeeded = false, onToggle = {}, onNavigate = {})
+            VpnMenuItem(
+                    vpnStatus = VpnStatus.NotAvailable,
+                    isSignedIn = false,
+                    isEnrollmentNeeded = false,
+                    onToggle = {},
+                    onNavigate = {},
+                )
         }
     }
 }
@@ -157,7 +163,13 @@ private fun VpnMenuItemOnPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.Active, isSignedIn = true, isEnrollmentNeeded = false, onToggle = {}, onNavigate = {})
+            VpnMenuItem(
+                vpnStatus = VpnStatus.Active,
+                isSignedIn = true,
+                isEnrollmentNeeded = false,
+                onToggle = {},
+                onNavigate = {},
+            )
         }
     }
 }
@@ -169,7 +181,13 @@ private fun VpnMenuItemConnectingPreview(
 ) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
-            VpnMenuItem(vpnStatus = VpnStatus.Activating, isSignedIn = true, isEnrollmentNeeded = false, onToggle = {}, onNavigate = {})
+            VpnMenuItem(
+                vpnStatus = VpnStatus.Activating,
+                isSignedIn = true,
+                isEnrollmentNeeded = false,
+                onToggle = {},
+                onNavigate = {},
+            )
         }
     }
 }

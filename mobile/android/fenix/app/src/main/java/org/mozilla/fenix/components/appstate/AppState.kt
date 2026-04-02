@@ -12,7 +12,6 @@ import mozilla.components.lib.crash.store.CrashState
 import mozilla.components.lib.state.State
 import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.VpnState
 import org.mozilla.fenix.components.appstate.qrScanner.QrScannerState
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewState
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsState
@@ -81,7 +80,6 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property reviewPrompt Whether we should show a review prompt and whether we ran the eligibility check at all
  * @property voiceSearchState The [VoiceSearchState] representing the current state of voice search functionality.
  * @property isDefaultBrowser Whether Firefox is the default browser or not.
- * @property vpnState The current [VpnState] of the VPN proxy, including status and quota data.
  */
 data class AppState(
     val isForeground: Boolean = true,
@@ -119,5 +117,4 @@ data class AppState(
     val reviewPrompt: ReviewPromptState = Unknown,
     val voiceSearchState: VoiceSearchState = VoiceSearchState(),
     val isDefaultBrowser: Boolean = false,
-    val vpnState: VpnState = VpnState(),
 ) : State

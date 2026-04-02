@@ -602,6 +602,10 @@ projects:
     description: Feature of use cases for FxA Account that work with push support.
     path: components/feature/accounts-push
     publish: true
+  components:feature-vpn:
+    description: Feature module bridging GeckoView VPN proxy state into an AC store.
+    path: components/feature/vpn
+    publish: false
     upstream_dependencies:
     - components:browser-errorpages
     - components:browser-state

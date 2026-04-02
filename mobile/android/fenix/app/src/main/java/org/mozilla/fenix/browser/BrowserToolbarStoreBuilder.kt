@@ -94,6 +94,7 @@ object BrowserToolbarStoreBuilder {
                     BrowserToolbarMiddleware(
                         uiContext = activity,
                         appStore = appStore,
+                        vpnStore = components.vpnStore,
                         browserScreenStore = browserScreenStore,
                         browserStore = browserStore,
                         permissionsStorage = components.core.geckoSitePermissionsStorage,

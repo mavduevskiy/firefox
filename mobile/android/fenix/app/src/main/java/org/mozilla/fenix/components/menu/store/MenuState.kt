@@ -8,10 +8,10 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.vpn.VpnStatus
 import mozilla.components.lib.state.State
 import mozilla.components.support.ktx.kotlin.isAboutUrl
 import mozilla.components.support.ktx.kotlin.isContentUrl
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 
 /**

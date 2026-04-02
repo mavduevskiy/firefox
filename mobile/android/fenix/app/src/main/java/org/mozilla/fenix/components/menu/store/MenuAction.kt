@@ -6,9 +6,9 @@ package org.mozilla.fenix.components.menu.store
 
 import android.app.PendingIntent
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.vpn.VpnStatus
 import mozilla.components.lib.state.Action
 import mozilla.components.service.fxa.manager.AccountState
-import org.mozilla.fenix.components.VpnStatus
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 
 /**

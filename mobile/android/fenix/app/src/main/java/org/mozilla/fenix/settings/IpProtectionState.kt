@@ -4,7 +4,7 @@
 
 package org.mozilla.fenix.settings
 
-import org.mozilla.fenix.components.VpnStatus
+import mozilla.components.feature.vpn.VpnStatus
 
 /**
  * UI state for the VPN / IP Protection settings screen.
@@ -16,7 +16,6 @@ import org.mozilla.fenix.components.VpnStatus
  * @property isAutoLocation Whether automatic server location selection is enabled.
  * @property selectedLocation Display name of the currently selected VPN server location.
  * @property isEnrollmentNeeded True when the user is signed in but Guardian has not yet enrolled
- *   this device. The toggle routes to [VpnEnrollmentFeature.beginEnrollment] instead of activate.
  */
 data class IpProtectionState(
     val vpnStatus: VpnStatus = VpnStatus.NotAvailable,
