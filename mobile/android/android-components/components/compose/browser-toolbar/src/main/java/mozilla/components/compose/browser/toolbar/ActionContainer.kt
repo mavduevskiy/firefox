@@ -23,15 +23,15 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
-import mozilla.components.compose.browser.toolbar.concept.Action.VpnPillAction
-import mozilla.components.compose.browser.toolbar.ui.AnimatedPillButton
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringContentDescription
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringResContentDescription
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon.DrawableIcon
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
+import mozilla.components.compose.browser.toolbar.concept.Action.VpnPillAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
+import mozilla.components.compose.browser.toolbar.ui.AnimatedPillButton
 import mozilla.components.compose.browser.toolbar.ui.SearchSelector
 import mozilla.components.compose.browser.toolbar.ui.TabCounter
 import mozilla.components.compose.browser.toolbar.ui.ActionButton as ActionButtonComposable
@@ -109,8 +109,10 @@ fun ActionContainer(
                 }
                 is VpnPillAction -> AnimatedPillButton(
                     icon = action.icon,
+                    overlayIcon = action.overlayIcon,
                     text = action.text,
                     contentDescription = action.contentDescription,
+                    highlighted = action.highlighted,
                     onClick = action.onClick,
                     onInteraction = onInteraction,
                 )

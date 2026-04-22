@@ -682,13 +682,16 @@ class BrowserToolbarMiddleware(
         if (vpnStore.state.vpnStatus == VpnStatus.Active &&
             !browserScreenStore.state.readerModeStatus.isActive
         ) {
-            val vpnIcon = AppCompatResources.getDrawable(uiContext, R.drawable.ic_vpn_on)
-            if (vpnIcon != null) {
+            val shieldIcon = AppCompatResources.getDrawable(uiContext, siteInfoDrawableResId())
+            val overlayIcon = AppCompatResources.getDrawable(uiContext, iconsR.drawable.mozac_ic_globe_24)
+            if (shieldIcon != null && overlayIcon != null) {
                 return listOf(
                     Action.VpnPillAction(
-                        icon = vpnIcon,
+                        icon = shieldIcon,
+                        overlayIcon = overlayIcon,
                         text = uiContext.getString(R.string.vpn_toolbar_pill_label),
                         contentDescription = uiContext.getString(R.string.vpn_toolbar_pill_description),
+                        highlighted = siteInfoHighlighted(),
                         onClick = StartPageActions.SiteInfoClicked,
                     ),
                 )
@@ -704,6 +707,37 @@ class BrowserToolbarMiddleware(
         }.map { config ->
             buildAction(config.action, Source.AddressBar.PageStart)
         }
+    }
+
+    /**
+     * Mirrors the drawable selection performed by the [ToolbarAction.SiteInfo] branch of
+     * [buildAction], so that the VPN pill displays the same shield variant as the standard
+     * site-info icon would for the current tab.
+     */
+    private fun siteInfoDrawableResId(): Int {
+        val selectedTab = browserStore.state.selectedTab
+        return when {
+            selectedTab?.content?.url?.isContentUrl() == true ->
+                iconsR.drawable.mozac_ic_page_portrait_24
+            selectedTab?.content?.securityInfo == null ||
+                selectedTab.content.securityInfo == SecurityInfo.Unknown ->
+                iconsR.drawable.mozac_ic_globe_24
+            selectedTab.content.securityInfo.isSecure &&
+                selectedTab.trackingProtection.enabled &&
+                !selectedTab.trackingProtection.ignoredOnTrackingProtection ->
+                iconsR.drawable.mozac_ic_shield_checkmark_24
+            else -> iconsR.drawable.mozac_ic_shield_slash_24
+        }
+    }
+
+    /**
+     * Matches the highlight condition used by the [ToolbarAction.SiteInfo] branch of
+     * [buildAction]: permission changes or tracking-protection exceptions on the current tab.
+     */
+    private fun siteInfoHighlighted(): Boolean {
+        val tab = browserStore.state.selectedTab ?: return false
+        return tab.content.permissionHighlights.permissionsChanged ||
+            tab.trackingProtection.ignoredOnTrackingProtection
     }
 
     private fun updateEndPageActions(store: Store<BrowserToolbarState, BrowserToolbarAction>) =

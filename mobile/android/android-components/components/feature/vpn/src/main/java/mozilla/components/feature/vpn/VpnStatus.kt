@@ -8,14 +8,19 @@ package mozilla.components.feature.vpn
 enum class VpnStatus {
     /** Active and routing traffic. */
     Active,
+
     /** In the process of connecting. */
     Activating,
+
     /** Authenticated and ready to be activated. */
     Ready,
+
     /** Paused, because the monthly data quota has been exhausted. */
     Paused,
+
     /** Encountered an error and could not activate or stay active. */
     Error,
+
     /** Not available, e.g. the user is not signed in or not authorized VPN yet. */
     NotAvailable,
 }

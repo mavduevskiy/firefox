@@ -70,10 +70,13 @@ class DefaultVpnFeature(
         handler = engine.registerIPProtectionDelegate(object : IPProtectionDelegate {
             override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
                 val state = info.toVpnState()
-                Log.d(TAG, "onStateChanged: proxyState=${info.proxyState}" +
+                Log.d(
+                    TAG,
+                    "onStateChanged: proxyState=${info.proxyState}" +
                     " serviceState=${info.serviceState}" +
                     " remaining=${info.remaining} max=${info.max}" +
-                    " → vpnStatus=${state.vpnStatus} isEnrollmentNeeded=${state.isEnrollmentNeeded}")
+                    " → vpnStatus=${state.vpnStatus} isEnrollmentNeeded=${state.isEnrollmentNeeded}",
+                )
                 store.dispatch(VpnAction.UpdateState(state))
             }
         })
@@ -183,9 +186,12 @@ class DefaultVpnFeature(
             },
             onInitialState = { info ->
                 val state = info.toVpnState()
-                Log.d(TAG, "setTokenProvider result: proxyState=${info.proxyState} serviceState=${info.serviceState}" +
+                Log.d(
+                    TAG,
+                    "setTokenProvider result: proxyState=${info.proxyState} serviceState=${info.serviceState}" +
                     " remaining=${info.remaining} max=${info.max} → vpnStatus=${state.vpnStatus}" +
-                    " isEnrollmentNeeded=${state.isEnrollmentNeeded}")
+                    " isEnrollmentNeeded=${state.isEnrollmentNeeded}",
+                )
                 store.dispatch(VpnAction.UpdateState(state))
             },
         )

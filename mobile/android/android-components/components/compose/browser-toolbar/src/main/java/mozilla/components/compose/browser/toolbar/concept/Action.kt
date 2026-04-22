@@ -172,15 +172,20 @@ sealed class Action {
      * away — fading the label and background first, then collapsing to icon-only width — so
      * the URL text slides in behind it once the pill has disappeared.
      *
-     * @property icon The icon to display (stays visible after the animation completes).
+     * @property icon The base icon to display (stays visible after the animation completes).
+     * @property overlayIcon A smaller icon overlaid at the bottom-end of [icon], indicating
+     * that the pill is active (for example a globe indicating the VPN proxy).
      * @property text The label shown briefly beside the icon before it fades.
      * @property contentDescription Accessibility description for the button.
+     * @property highlighted Whether to render a highlight badge on top of [icon].
      * @property onClick [BrowserToolbarInteraction] dispatched when the button is tapped.
      */
     data class VpnPillAction(
         val icon: Drawable,
+        val overlayIcon: Drawable,
         val text: String,
         val contentDescription: String,
+        val highlighted: Boolean = false,
         val onClick: BrowserToolbarInteraction,
     ) : Action()
 }
