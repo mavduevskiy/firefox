@@ -35,6 +35,7 @@ data class IPProtectionState(
     val resetDate: String? = null,
     val accountState: AccountState = AccountState(),
     val proxyActiveShown: Boolean = false,
+    val activationError: Boolean = false,
     val activate: Boolean? = null,
 ) : State
 

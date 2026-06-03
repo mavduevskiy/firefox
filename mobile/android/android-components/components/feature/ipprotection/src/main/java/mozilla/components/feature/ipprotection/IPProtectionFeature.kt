@@ -208,9 +208,13 @@ class IPProtectionFeature(
             .filterNotNull()
             .collect { activate ->
                 if (activate) {
-                    handler?.activate()
+                    handler?.activate { result ->
+                        store.dispatch(InternalAction.ActivationStateChanged(result))
+                    }
                 } else {
-                    handler?.deactivate()
+                    handler?.deactivate { result ->
+                        store.dispatch(InternalAction.ActivationStateChanged(result))
+                    }
                 }
             }
     }

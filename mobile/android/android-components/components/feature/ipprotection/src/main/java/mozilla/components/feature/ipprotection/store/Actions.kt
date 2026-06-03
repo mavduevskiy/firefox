@@ -53,6 +53,8 @@ internal sealed class InternalAction : IPProtectionAction() {
      */
     data class AccountManagerStateChanged(val status: AccountStatus) : InternalAction()
 
+    data class ActivationStateChanged(val result: IPProtectionHandler.ActivationResult) : InternalAction()
+
     /**
      * Reports that the account is ready to be used.
      */

@@ -43,7 +43,7 @@ class IPProtectionInfoPrompter(
 ) : AbstractBinding<IPProtectionState>(store, mainDispatcher) {
     override suspend fun onState(flow: Flow<IPProtectionState>) {
         flow.distinctUntilChanged { old, new ->
-            old.proxyStatus == new.proxyStatus && old.eligibilityStatus == new.eligibilityStatus
+            (old.proxyStatus == new.proxyStatus && old.eligibilityStatus == new.eligibilityStatus) || !new.activationError
         }.collect { state ->
             processStateForSnackbar(state)
         }
@@ -51,13 +51,14 @@ class IPProtectionInfoPrompter(
 
     private fun processStateForSnackbar(state: IPProtectionState) {
         if (state.eligibilityStatus == EligibilityStatus.Eligible) {
-            when (state.proxyStatus) {
-                Authorized.DataLimitReached -> {
+            when {
+                state.proxyStatus is Authorized.DataLimitReached -> {
                     appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.dataLimitReached))
                 }
-                Authorized.ConnectionError -> {
+                state.activationError || state.proxyStatus is Authorized.ConnectionError -> {
                     appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.connectionError))
                 }
+
                 else -> {
                     // no-op
                 }

@@ -16,12 +16,12 @@ interface IPProtectionHandler {
     /**
      * Activates the IP protection.
      */
-    fun activate()
+    fun activate(onResult: (ActivationResult) -> Unit)
 
     /**
      * Deactivates the IP protection proxy.
      */
-    fun deactivate()
+    fun deactivate(onResult: (ActivationResult) -> Unit)
 
     /**
      * Triggers enrollment via the active auth provider. The [onResult] callback is invoked once
@@ -70,6 +70,10 @@ interface IPProtectionHandler {
         val error: String? = null,
     )
 
+    data class ActivationResult(
+        var isActive: Boolean,
+        val hasErrored: Boolean,
+    )
     /**
      * Notify account state changed.
      */

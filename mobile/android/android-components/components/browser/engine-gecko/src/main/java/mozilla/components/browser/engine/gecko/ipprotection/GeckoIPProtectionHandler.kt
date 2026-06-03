@@ -7,6 +7,7 @@ package mozilla.components.browser.engine.gecko.ipprotection
 import androidx.annotation.OptIn
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.ActivationResult
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
@@ -22,12 +23,42 @@ internal class GeckoIPProtectionHandler(
 
     private val logger = Logger("IPP:GeckoHandler")
 
-    override fun activate() {
-        runtime.ipProtectionController.activate()
+    override fun activate(onResult: (ActivationResult) -> Unit) {
+        runtime.ipProtectionController.activate().then(
+            { _ ->
+                onResult(ActivationResult(
+                    isActive = true,
+                    hasErrored = false,
+                ))
+                GeckoResult.fromValue(null)
+            },
+            { _ ->
+                onResult(ActivationResult(
+                    isActive = false,
+                    hasErrored = true,
+                ))
+                GeckoResult.fromValue(null)
+            },
+        )
     }
 
-    override fun deactivate() {
-        runtime.ipProtectionController.deactivate()
+    override fun deactivate(onResult: (ActivationResult) -> Unit) {
+        runtime.ipProtectionController.deactivate().then(
+            { _ ->
+                onResult(ActivationResult(
+                    isActive = false,
+                    hasErrored = false,
+                ))
+                GeckoResult.fromValue(null)
+            },
+            { _ ->
+                onResult(ActivationResult(
+                    isActive = true,
+                    hasErrored = false,
+                ))
+                GeckoResult.fromValue(null)
+            },
+        )
     }
 
     override fun enroll(onResult: (IPProtectionHandler.EnrollResult) -> Unit) {
