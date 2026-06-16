@@ -2298,6 +2298,7 @@ package org.mozilla.geckoview {
     method @NonNull @UiThread public GeckoResult<Void> notifySignInStateChanged(boolean);
     method @UiThread public void setAuthProvider(@Nullable IPProtectionController.AuthProvider);
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
+    method @HandlerThread @NonNull public GeckoResult<Void> setLocation(@Nullable String);
     method @HandlerThread @NonNull public GeckoResult<Void> uninit();
     field public static final int SERVICE_STATE_OPTED_OUT = 3;
     field public static final int SERVICE_STATE_READY = 4;
@@ -2311,6 +2312,7 @@ package org.mozilla.geckoview {
   }
 
   public static interface IPProtectionController.Delegate {
+    method @UiThread default public void onLocationsChanged(@NonNull List<IPProtectionController.Location>, @Nullable String);
     method @UiThread default public void onProxyStateChanged(@NonNull IPProtectionController.ProxyState);
     method @UiThread default public void onServiceStateChanged(int);
     method @UiThread default public void onUsageChanged(@NonNull IPProtectionController.UsageInfo);
@@ -2334,6 +2336,12 @@ package org.mozilla.geckoview {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.IPProxyException.Code {
+  }
+
+  public static class IPProtectionController.Location {
+    ctor protected Location();
+    field public final boolean available;
+    field @NonNull public final String code;
   }
 
   public static class IPProtectionController.ProxyState {

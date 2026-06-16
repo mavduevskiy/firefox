@@ -8,6 +8,7 @@ import androidx.annotation.OptIn
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.Location
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.IPProtectionController as GeckoViewIPProtectionController
@@ -48,7 +49,19 @@ internal class GeckoIPProtectionDelegate(
         )
         delegate.onStateChanged(stateInfo)
     }
+
+    override fun onLocationsChanged(
+        locations: List<GeckoViewIPProtectionController.Location>,
+        selected: String?,
+    ) {
+        delegate.onLocationsChanged(locations.map { it.toLocation() }, selected)
+    }
 }
+
+@OptIn(ExperimentalGeckoViewApi::class)
+@kotlin.OptIn(ExperimentalAndroidComponentsApi::class)
+internal fun GeckoViewIPProtectionController.Location.toLocation(): Location =
+    Location(code = code, available = available)
 
 @OptIn(ExperimentalGeckoViewApi::class)
 @kotlin.OptIn(ExperimentalAndroidComponentsApi::class)

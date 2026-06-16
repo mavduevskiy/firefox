@@ -8,6 +8,7 @@ package mozilla.components.feature.ipprotection.store.state
 
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.Location
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.lib.state.State
 
@@ -26,6 +27,11 @@ const val BYTES_PER_GB = 1024 * 1024 * 1024f
  * @property lastError The last error received from the IPProtection service.
  * @property proxyActiveShown Whether the proxy-active status has been shown to the user.
  * @property activate To turn protection on or off.
+ * @property locations The selectable egress locations reported by the engine.
+ * @property selectedLocation The selected ISO 3166-1 alpha-2 country code, or null for the
+ * recommended (automatically selected) location.
+ * @property pendingLocationChange A user-initiated location change awaiting application by the
+ * engine, or null when there is nothing to apply.
  */
 data class IPProtectionState(
     val eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
@@ -38,7 +44,18 @@ data class IPProtectionState(
     val lastError: String? = null,
     val proxyActiveShown: Boolean = false,
     val activate: Boolean? = null,
+    val locations: List<Location> = emptyList(),
+    val selectedLocation: String? = null,
+    val pendingLocationChange: LocationSelection? = null,
 ) : State
+
+/**
+ * A pending, user-initiated egress location change awaiting application by the engine. The wrapper
+ * lets a null [code] (recommended location) be distinguished from "no change pending".
+ *
+ * @property code ISO 3166-1 alpha-2 country code, or null for the recommended location.
+ */
+data class LocationSelection(val code: String?)
 
 /**
  * Convenience function for eligibility.

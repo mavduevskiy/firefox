@@ -18,11 +18,15 @@ exclude: true
   ([bug 1994860]({{bugzilla}}1994860))
 - Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485))
 - Added  [`clearTrackingDb`][153.4] to ContentBlockingController to support clearing all data stored about blocked trackers in previous browsing sessions. ([bug 2042068]({{bugzilla}}2042068))
+- Added [`IPProtectionController.setLocation`][153.5], [`IPProtectionController.Location`][153.6], and [`IPProtectionController.Delegate.onLocationsChanged`][153.7] so embedders can present and choose the IP Protection egress location.
 
 [153.1]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.SourceType.html
 [153.2]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html#source
 [153.3]: {{javadoc_uri}}/ContentBlockingController.Event.html#REPLACED_FINGERPRINTING_CONTENT
 [153.4]: {{javadoc_uri}}/ContentBlockingController.html#clearTrackingDb()
+[153.5]: {{javadoc_uri}}/IPProtectionController.html#setLocation(java.lang.String)
+[153.6]: {{javadoc_uri}}/IPProtectionController.Location.html
+[153.7]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onLocationsChanged(java.util.List,java.lang.String)
 
 ## v152
 - Added [`WebExtensionController.INSTALLATION_METHOD_RTAMO`][152.1], which should be used when a `WebExtension` is installed for the RTAMO feature. ([bug 2029607]({{bugzilla}}2029607))
@@ -1986,4 +1990,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 8889de999fd9ecf04d0c7ac46b1aa24d79a15c5a
+[api-version]: d8c9fff765749fd619f566db9e6e8d34329c9b9d

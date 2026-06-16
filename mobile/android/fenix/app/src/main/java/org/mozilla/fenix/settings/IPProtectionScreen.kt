@@ -64,7 +64,6 @@ import mozilla.components.feature.ipprotection.store.state.maxDataGb
 import mozilla.components.feature.ipprotection.store.state.remainingDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -85,6 +84,7 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * @param onVpnToggle Called when the VPN switch is toggled.
  * @param onLearnMoreClick Called when any "Learn more" link is tapped.
  * @param onGetStartedClick Called when the "Get started" button is tapped.
+ * @param onLocationClick Called when the location row is tapped to open the location picker.
  * @param showDebugAction Whether to show the debug menu action in the toolbar.
  * @param onDebugActionClick Called when the debug menu action is tapped.
  * @param onNavigateBack Called when the back navigation icon is tapped.
@@ -100,6 +100,7 @@ fun IPProtectionScreen(
     onVpnToggle: (Boolean) -> Unit,
     onLearnMoreClick: () -> Unit,
     onGetStartedClick: () -> Unit,
+    onLocationClick: () -> Unit = {},
     showDebugAction: Boolean = false,
     onDebugActionClick: () -> Unit = {},
     onNavigateBack: () -> Unit,
@@ -151,7 +152,10 @@ fun IPProtectionScreen(
                         HorizontalDivider()
                     }
 
-                    VpnLocationSection()
+                    VpnLocationSection(
+                        selectedLocation = state.selectedLocation,
+                        onLocationClick = onLocationClick,
+                    )
                 } else {
                     GetStartedSection(
                         syncingData = syncingData,
@@ -307,22 +311,57 @@ private fun ColumnScope.GetStartedSection(
 }
 
 @Composable
-private fun VpnLocationSection() {
+private fun VpnLocationSection(
+    selectedLocation: String?,
+    onLocationClick: () -> Unit,
+) {
     Text(
         text = stringResource(R.string.ip_protection_location_section),
         style = FirefoxTheme.typography.headline8,
-        color = MaterialTheme.colorScheme.onSurface,
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(
             horizontal = FirefoxTheme.layout.space.dynamic200,
             vertical = FirefoxTheme.layout.space.static150,
         ),
     )
 
-    TextListItem(
-        label = stringResource(R.string.ip_protection_location_recommended_label),
-        description = stringResource(R.string.ip_protection_location_recommended_description),
-        maxDescriptionLines = Int.MAX_VALUE,
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
+            .clickable(onClick = onLocationClick)
+            .padding(
+                horizontal = FirefoxTheme.layout.space.dynamic200,
+                vertical = FirefoxTheme.layout.space.static150,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
+    ) {
+        if (selectedLocation == null) {
+            Icon(
+                painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(R.string.ip_protection_location_recommended_label),
+                modifier = Modifier.weight(1f),
+                style = FirefoxTheme.typography.subtitle1,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        } else {
+            CountryFlag(
+                code = selectedLocation,
+                modifier = Modifier.size(width = 28.dp, height = 20.dp),
+            )
+            Text(
+                text = countryDisplayName(selectedLocation),
+                modifier = Modifier.weight(1f),
+                style = FirefoxTheme.typography.subtitle1,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
 }
 
 @Composable

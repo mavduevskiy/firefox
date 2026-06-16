@@ -120,4 +120,8 @@ internal class GeckoIPProtectionHandler(
     override fun notifyAccountStatus(signedIn: Boolean) {
         runtime.ipProtectionController.notifySignInStateChanged(signedIn)
     }
+
+    override fun setLocation(code: String?) {
+        runtime.ipProtectionController.setLocation(code)
+    }
 }

@@ -8,6 +8,7 @@ package mozilla.components.feature.ipprotection.store
 
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.Location
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -47,6 +48,26 @@ sealed class IPProtectionAction : Action {
      * Reports that the most recent activate or deactivate request failed.
      */
     object ToggleFailed : IPProtectionAction()
+
+    /**
+     * Reports a fresh snapshot of the selectable egress locations and the current selection from
+     * the engine.
+     *
+     * @property locations The selectable locations.
+     * @property selected The selected ISO 3166-1 alpha-2 country code, or null for the recommended
+     *  location.
+     */
+    data class LocationsChanged(
+        val locations: List<Location>,
+        val selected: String?,
+    ) : IPProtectionAction()
+
+    /**
+     * Requests a change of the egress location. Triggered by the user.
+     *
+     * @property code ISO 3166-1 alpha-2 country code, or null to use the recommended location.
+     */
+    data class SelectLocation(val code: String?) : IPProtectionAction()
 }
 
 /**

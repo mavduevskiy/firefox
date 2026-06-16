@@ -65,6 +65,16 @@ interface IPProtectionHandler {
     )
 
     /**
+     * Selects the egress [Location] to route through. The selection is persisted by the engine
+     * and applied immediately when the proxy is active, otherwise on the next [activate]. The
+     * resulting selection is reported back through [IPProtectionDelegate.onLocationsChanged].
+     *
+     * @param code An ISO 3166-1 alpha-2 country code (see [Location.code]), or null to use the
+     *  recommended (automatically selected) location.
+     */
+    fun setLocation(code: String?)
+
+    /**
      * Result of an enrollment attempt.
      *
      * @property isEnrolledAndEntitled Whether the user is now enrolled and entitled to use the
@@ -133,6 +143,18 @@ interface IPProtectionHandler {
         }
     }
 }
+
+/**
+ * A VPN egress location the user can select.
+ *
+ * @property code ISO 3166-1 alpha-2 country code.
+ * @property available Whether this location currently has at least one available server.
+ */
+@ExperimentalAndroidComponentsApi
+data class Location(
+    val code: String,
+    val available: Boolean,
+)
 
 /** The possible states of the IP protection service. */
 @ExperimentalAndroidComponentsApi

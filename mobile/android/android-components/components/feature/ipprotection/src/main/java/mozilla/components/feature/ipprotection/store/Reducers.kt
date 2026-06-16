@@ -12,6 +12,7 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.LocationSelection
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 
@@ -154,6 +155,21 @@ internal fun iPProtectionReducer(
     is IPProtectionAction.ToggleFailed -> {
         // Reset `activate` so the next Toggle reads as a fresh edge in observeToggle().
         state.copy(activate = null)
+    }
+
+    is IPProtectionAction.LocationsChanged -> {
+        state.copy(
+            locations = action.locations,
+            selectedLocation = action.selected,
+            pendingLocationChange = null,
+        )
+    }
+
+    is IPProtectionAction.SelectLocation -> {
+        state.copy(
+            selectedLocation = action.code,
+            pendingLocationChange = LocationSelection(action.code),
+        )
     }
 
     is InternalAction -> internalReducer(state, action)

@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -178,6 +180,26 @@ public class IPProtectionController {
     }
   }
 
+  /** A VPN egress location the user can select. */
+  public static class Location {
+    /** ISO 3166-1 alpha-2 country code. */
+    public final @NonNull String code;
+
+    /** Whether this location currently has at least one available server. */
+    public final boolean available;
+
+    /** Default constructor. */
+    protected Location() {
+      code = "";
+      available = false;
+    }
+
+    /* package */ Location(final @NonNull GeckoBundle bundle) {
+      code = bundle.getString("code", "");
+      available = bundle.getBoolean("available", false);
+    }
+  }
+
   /** Embedder-provided hooks for authentication. */
   public interface AuthProvider {
     /**
@@ -223,6 +245,18 @@ public class IPProtectionController {
      */
     @UiThread
     default void onUsageChanged(final @NonNull UsageInfo info) {}
+
+    /**
+     * Called when the set of selectable locations or the current selection changes. Also called
+     * once after {@link #init()} with the initial value.
+     *
+     * @param locations The selectable egress locations.
+     * @param selected The selected ISO 3166-1 alpha-2 country code, or {@code null} when the
+     *     recommended (automatically selected) location is in use.
+     */
+    @UiThread
+    default void onLocationsChanged(
+        final @NonNull List<Location> locations, final @Nullable String selected) {}
   }
 
   /* package */ IPProtectionController() {
@@ -233,6 +267,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPProtectionService:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
+            "GeckoView:IPProtection:LocationsChanged",
             "GeckoView:IPProtection:GetToken");
   }
 
@@ -418,6 +453,26 @@ public class IPProtectionController {
         .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
   }
 
+  /**
+   * Selects the egress location to route through. The selection is persisted and, if the proxy is
+   * currently active, applied immediately by switching the live connection; otherwise it takes
+   * effect on the next {@link #activate()}.
+   *
+   * <p>The resulting selection is reported back through {@link Delegate#onLocationsChanged(List,
+   * String)}.
+   *
+   * @param code An ISO 3166-1 alpha-2 country code from {@link Location#code}, or {@code null} to
+   *     use the recommended (automatically selected) location.
+   * @return A {@link GeckoResult} that resolves once the selection has been stored.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> setLocation(final @Nullable String code) {
+    ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("location", code != null ? code : "");
+    return EventDispatcher.getInstance().queryVoid("GeckoView:IPProtection:SetLocation", bundle);
+  }
+
   /** Exception type for IP proxy errors. */
   public static class IPProxyException extends RuntimeException {
 
@@ -490,6 +545,19 @@ public class IPProtectionController {
   private static final String ERROR_NO_AUTH_PROVIDER = "no-auth-provider";
   private static final String ERROR_NO_TOKEN = "no-token";
 
+  private static @NonNull List<Location> parseLocations(final @NonNull GeckoBundle message) {
+    final GeckoBundle[] bundles = message.getBundleArray("locations");
+    final List<Location> locations = new ArrayList<>();
+    if (bundles != null) {
+      for (final GeckoBundle bundle : bundles) {
+        if (bundle != null) {
+          locations.add(new Location(bundle));
+        }
+      }
+    }
+    return locations;
+  }
+
   private class EventListener implements BundleEventListener {
     @Override
     public void handleMessage(
@@ -504,6 +572,11 @@ public class IPProtectionController {
           break;
         case "GeckoView:IPProtection:IPPProxyManager:UsageChanged":
           withDelegate(event, d -> d.onUsageChanged(new UsageInfo(message)));
+          break;
+        case "GeckoView:IPProtection:LocationsChanged":
+          withDelegate(
+              event,
+              d -> d.onLocationsChanged(parseLocations(message), message.getString("selected")));
           break;
         case "GeckoView:IPProtection:GetToken":
           {

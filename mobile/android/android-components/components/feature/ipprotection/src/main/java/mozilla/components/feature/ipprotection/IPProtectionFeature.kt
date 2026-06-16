@@ -21,6 +21,7 @@ import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
+import mozilla.components.concept.engine.ipprotection.Location
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
@@ -69,6 +70,9 @@ class IPProtectionFeature(
         }
         mainScope.launch {
             observeAccount(store, mainDispatcher)
+        }
+        mainScope.launch {
+            observeLocation(store, mainDispatcher)
         }
     }
 
@@ -165,6 +169,10 @@ class IPProtectionFeature(
                 override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
                     store.dispatch(IPProtectionAction.EngineStateChanged(info))
                 }
+
+                override fun onLocationsChanged(locations: List<Location>, selected: String?) {
+                    store.dispatch(IPProtectionAction.LocationsChanged(locations, selected))
+                }
             },
         )
         handler?.run {
@@ -218,5 +226,18 @@ class IPProtectionFeature(
                     handler?.deactivate(onResult)
                 }
             }
+    }
+
+    private fun observeLocation(store: IPProtectionStore, mainDispatcher: CoroutineDispatcher) {
+        store.flowScoped(dispatcher = mainDispatcher) { flow ->
+            // Only user-initiated changes set `pendingLocationChange`; engine snapshots clear it,
+            // so this forwards each selection to the engine exactly once.
+            flow.map { it.pendingLocationChange }
+                .distinctUntilChanged()
+                .filterNotNull()
+                .collect { pending ->
+                    handler?.setLocation(pending.code)
+                }
+        }
     }
 }

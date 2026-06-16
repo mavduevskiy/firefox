@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private var showDebugDialog by mutableStateOf(false)
+    private var showLocationPicker by mutableStateOf(false)
 
     private val args: IPProtectionFragmentArgs by navArgs()
     private val fxaAccountAuthFlow = ViewBoundFeatureWrapper<IPProtectionFxaAuthFlow>()
@@ -80,6 +82,23 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
 
         FirefoxTheme {
+            if (showLocationPicker) {
+                BackHandler { showLocationPicker = false }
+
+                IPProtectionLocationScreen(
+                    locations = state.locations,
+                    selectedLocation = state.selectedLocation,
+                    onLocationSelected = { code ->
+                        requireComponents.ipProtection.store.dispatch(
+                            IPProtectionAction.SelectLocation(code),
+                        )
+                    },
+                    onNavigateBack = { showLocationPicker = false },
+                )
+
+                return@FirefoxTheme
+            }
+
             IPProtectionScreen(
                 state = state,
                 snackbarHostState = snackbarHostState,
@@ -107,6 +126,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     Vpn.getStartedTapped.record()
                     requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                 },
+                onLocationClick = { showLocationPicker = true },
                 showDebugAction = requireComponents.settings.showSecretDebugMenuThisSession,
                 onDebugActionClick = { showDebugDialog = true },
                 onNavigateBack = { findNavController().popBackStack() },
