@@ -20,6 +20,7 @@ exclude: true
   ([bug 2042799]({{bugzilla}}2042799))
 - Added [`IPProtectionController.getServerList`][154.6] and [`IPProtectionController.Country`][154.7] to retrieve the list of countries available in the proxy serverlist.
 - Added [`IPProtectionController.activate(Country)`][154.8] to activate the proxy routing through a selected country.
+- Added [`IPProtectionController.switchTo(Country)`][154.9] to switch the active proxy connection to a server in a different country, resolving to whether the connection was switched.
 
 [154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
 [154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
@@ -29,6 +30,7 @@ exclude: true
 [154.6]: {{javadoc_uri}}/IPProtectionController.html#getServerList()
 [154.7]: {{javadoc_uri}}/IPProtectionController.Country.html
 [154.8]: {{javadoc_uri}}/IPProtectionController.html#activate(org.mozilla.geckoview.IPProtectionController.Country)
+[154.9]: {{javadoc_uri}}/IPProtectionController.html#switchTo(org.mozilla.geckoview.IPProtectionController.Country)
 
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
@@ -2003,4 +2005,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: a82fd4fcc06374108e051c199474ba2996414bbe
+[api-version]: afa3fdc68948ae4e6cfd325cfe074bb637f8e1a8

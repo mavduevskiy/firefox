@@ -460,6 +460,32 @@ public class IPProtectionController {
   }
 
   /**
+   * Switches the active proxy connection to a server in the given country.
+   *
+   * @param country The country to switch to, or {@code null} to switch to the recommended location.
+   * @return A {@link GeckoResult} that resolves to {@code true} if the connection was switched, or
+   *     {@code false} if it could not be (e.g. the proxy was not active), or rejects with an {@link
+   *     IPProxyException} describing the failure.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Boolean> switchTo(final @Nullable Country country) {
+    ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    if (country != null) {
+      bundle.putString("country", country.code);
+    }
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:Switch", bundle)
+        .map(
+            b -> b != null && b.getBoolean("switched", false),
+            e ->
+                IPProxyException.fromErrorString(
+                    e instanceof EventDispatcher.QueryException
+                        ? ((EventDispatcher.QueryException) e).data.toString()
+                        : null));
+  }
+
+  /**
    * Triggers enrollment via the active auth provider.
    *
    * @return A {@link GeckoResult} that resolves to an {@link EnrollResult} describing whether the

@@ -484,6 +484,50 @@ class IPProtectionControllerTest : BaseSessionTest() {
         )
     }
 
+    @Test
+    fun switchToChangesSelectedServer() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // Activate with no country: the recommended (REC) anycast server.
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "starts on the recommended server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+
+        // Switch to an explicit country.
+        assertThat(
+            "switch to US reports success",
+            sessionRule.waitForResult(
+                ipProtectionController.switchTo(IPProtectionController.Country("US", true)),
+            ),
+            equalTo(true),
+        )
+        assertThat(
+            "switched to the US server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("us.example.com"),
+        )
+
+        // Switch to the recommended server with null.
+        assertThat(
+            "switch back reports success",
+            sessionRule.waitForResult(ipProtectionController.switchTo(null)),
+            equalTo(true),
+        )
+        assertThat(
+            "back on the recommended server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+    }
+
     companion object {
         private const val SERVER_LIST_JSON =
             """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +

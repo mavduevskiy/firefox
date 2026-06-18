@@ -2299,6 +2299,7 @@ package org.mozilla.geckoview {
     method @HandlerThread @NonNull public GeckoResult<Void> refreshUsage();
     method @UiThread public void setAuthProvider(@Nullable IPProtectionController.AuthProvider);
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
+    method @HandlerThread @NonNull public GeckoResult<Boolean> switchTo(@Nullable IPProtectionController.Country);
     method @HandlerThread @NonNull public GeckoResult<Void> uninit();
     field public static final int SERVICE_STATE_OPTED_OUT = 3;
     field public static final int SERVICE_STATE_READY = 4;

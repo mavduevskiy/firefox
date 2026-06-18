@@ -215,6 +215,7 @@ export class GeckoViewStartup {
               "GeckoView:IPProtection:IPProtectionService:GetState",
               "GeckoView:IPProtection:IPPProxyManager:GetState",
               "GeckoView:IPProtection:Activate",
+              "GeckoView:IPProtection:Switch",
               "GeckoView:IPProtection:Deactivate",
               "GeckoView:IPProtection:Enroll",
               "GeckoView:IPProtection:RefreshUsage",

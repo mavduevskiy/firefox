@@ -199,6 +199,16 @@ export const GeckoViewIPProtection = {
           });
         break;
       }
+      case "GeckoView:IPProtection:Switch": {
+        const { switched, error } =
+          lazy.IPPProxyManager.switch(aData?.country) ?? {};
+        if (error) {
+          aCallback.onError(error);
+        } else {
+          aCallback.onSuccess({ switched: !!switched });
+        }
+        break;
+      }
       case "GeckoView:IPProtection:Deactivate": {
         lazy.IPPProxyManager.stop()
           .then(() => {
