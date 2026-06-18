@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -178,6 +180,30 @@ public class IPProtectionController {
       remaining = bundle.getLong("remaining", 0L);
       max = bundle.getLong("max", 0L);
       resetTime = bundle.getString("resetTime");
+    }
+  }
+
+  /** A country available in the proxy serverlist. */
+  public static class Country {
+    /** ISO 3166-1 alpha-2 country code. */
+    public final @NonNull String code;
+
+    /** Whether the country has at least one available (non-quarantined) server. */
+    public final boolean available;
+
+    /**
+     * Creates a country.
+     *
+     * @param code ISO 3166-1 alpha-2 country code.
+     * @param available Whether the country has at least one available server.
+     */
+    public Country(final @NonNull String code, final boolean available) {
+      this.code = code;
+      this.available = available;
+    }
+
+    /* package */ Country(final @NonNull GeckoBundle bundle) {
+      this(bundle.getString("code", ""), bundle.getBoolean("available", false));
     }
   }
 
@@ -358,6 +384,30 @@ public class IPProtectionController {
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:IPProtection:IPProtectionService:GetState")
         .map(b -> parseServiceState(b.getString("state")));
+  }
+
+  /**
+   * Gets the list of countries available in the proxy serverlist.
+   *
+   * @return A {@link GeckoResult} that resolves to the list of available {@link Country countries}.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<List<Country>> getServerList() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:ServerList:GetList")
+        .map(IPProtectionController::countriesFromBundle);
+  }
+
+  private static @NonNull List<Country> countriesFromBundle(final @NonNull GeckoBundle bundle) {
+    final List<Country> result = new ArrayList<>();
+    final GeckoBundle[] countries = bundle.getBundleArray("countries");
+    if (countries != null) {
+      for (final GeckoBundle country : countries) {
+        result.add(new Country(country));
+      }
+    }
+    return result;
   }
 
   /**

@@ -218,6 +218,7 @@ export class GeckoViewStartup {
               "GeckoView:IPProtection:Deactivate",
               "GeckoView:IPProtection:Enroll",
               "GeckoView:IPProtection:RefreshUsage",
+              "GeckoView:IPProtection:ServerList:GetList",
             ],
           });
 

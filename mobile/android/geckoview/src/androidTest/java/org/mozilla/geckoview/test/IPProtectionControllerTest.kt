@@ -321,6 +321,25 @@ class IPProtectionControllerTest : BaseSessionTest() {
     }
 
     @Test
+    fun getServerListReturnsConfiguredCountries() {
+        // Countries come from the pref-backed server list (SERVER_LIST_JSON):
+        // US has a usable server, DE only a quarantined one, and REC is the
+        // reserved recommended entry. getServerList reads the list directly and
+        // does not depend on sign-in or service state.
+        val countries = sessionRule.waitForResult(ipProtectionController.getServerList())
+        assertThat(
+            "the recommended entry is not reported as a country",
+            countries.none { it.code == "REC" },
+            equalTo(true),
+        )
+        assertThat(countries.size, equalTo(2))
+        assertThat(countries[0].code, equalTo("US"))
+        assertThat(countries[0].available, equalTo(true))
+        assertThat(countries[1].code, equalTo("DE"))
+        assertThat(countries[1].available, equalTo(false))
+    }
+
+    @Test
     fun activateReachesActiveWithTestAuthProvider() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf("toolkit.ipProtection.android.authProvider" to "test"),
@@ -439,6 +458,12 @@ class IPProtectionControllerTest : BaseSessionTest() {
         private const val SERVER_LIST_JSON =
             """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
                 """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
+                """"quarantined":false}]}]},""" +
+                """{"name":"Germany","code":"DE","cities":[{"name":"Berlin",""" +
+                """"code":"BE","servers":[{"hostname":"de1.example.com","port":443,""" +
+                """"quarantined":true}]}]},""" +
+                """{"name":"Recommended","code":"REC","cities":[{"name":"Anycast",""" +
+                """"code":"REC","servers":[{"hostname":"rec.example.com","port":443,""" +
                 """"quarantined":false}]}]}]"""
     }
 }

@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPProtectionServerlist:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPProtectionActivator:
     "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs",
   IPProtectionService:
@@ -149,6 +151,20 @@ export const GeckoViewIPProtection = {
           errorType:
             state === "error" ? (lazy.IPPProxyManager.errorType ?? null) : null,
         });
+        break;
+      }
+      case "GeckoView:IPProtection:ServerList:GetList": {
+        lazy.IPProtectionServerlist.maybeFetchList()
+          .then(() => {
+            aCallback.onSuccess({
+              countries: lazy.IPProtectionServerlist.countries,
+            });
+          })
+          .catch(err => {
+            aCallback.onError(
+              typeof err === "string" ? err : (err?.message ?? "generic-error")
+            );
+          });
         break;
       }
       case "GeckoView:IPProtection:Activate": {

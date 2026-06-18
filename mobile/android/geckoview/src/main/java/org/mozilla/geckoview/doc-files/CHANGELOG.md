@@ -18,12 +18,15 @@ exclude: true
 - Added experimental [`ContentPermission.notifyShown`][154.3] so embedders can signal that a permission prompt UI has been displayed to the user, enabling per-prompt telemetry on the Gecko side (e.g. for local network access). ([bug 2009145]({{bugzilla}}2009145))
 - Added [`IPProtectionController.refreshUsage`][154.4] to request a refresh of proxy usage information, delivered asynchronously via [`Delegate#onUsageChanged`][154.5].
   ([bug 2042799]({{bugzilla}}2042799))
+- Added [`IPProtectionController.getServerList`][154.6] and [`IPProtectionController.Country`][154.7] to retrieve the list of countries available in the proxy serverlist.
 
 [154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
 [154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
 [154.3]: {{javadoc_uri}}/GeckoSession.PermissionDelegate.ContentPermission.html#notifyShown()
 [154.4]: {{javadoc_uri}}/IPProtectionController.html#refreshUsage()
 [154.5]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onUsageChanged(org.mozilla.geckoview.IPProtectionController.UsageInfo)
+[154.6]: {{javadoc_uri}}/IPProtectionController.html#getServerList()
+[154.7]: {{javadoc_uri}}/IPProtectionController.Country.html
 
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
@@ -1999,4 +2002,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: ea825437e2bdbfcc8247a7385fb1aa8197f64455
+[api-version]: 05876008a2aa6469f762d21209cca811057f5528
