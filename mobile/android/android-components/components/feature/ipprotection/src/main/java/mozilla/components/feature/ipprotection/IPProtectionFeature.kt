@@ -200,6 +200,48 @@ class IPProtectionFeature(
         handler?.uninit()
     }
 
+    /**
+     * Fetches the list of countries available in the proxy serverlist. Returns an empty list if
+     * the handler has not been registered yet.
+     *
+     * @param onResult Called with the list of available [IPProtectionHandler.Country] entries.
+     */
+    fun getServerList(onResult: (List<IPProtectionHandler.Country>) -> Unit) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.getServerList(onResult) ?: onResult(emptyList())
+            }
+        }
+    }
+
+    /**
+     * Activates the proxy routing through a specific [country]. No-ops if the handler has not been
+     * registered yet.
+     *
+     * @param country The country to route through.
+     */
+    fun activate(country: IPProtectionHandler.Country) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.activate(country)
+            }
+        }
+    }
+
+    /**
+     * Switches the active proxy connection to a server in the given [country]. No-ops if the handler
+     * has not been registered yet, or if the proxy is not active.
+     *
+     * @param country The country to switch to.
+     */
+    fun switchTo(country: IPProtectionHandler.Country) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.switchTo(country)
+            }
+        }
+    }
+
     private suspend fun observeToggle() = withContext(Dispatchers.Main) {
         // Dedupe over the nullable so `true -> null -> true` reads as two edges, not one.
         store.flow()
@@ -213,7 +255,7 @@ class IPProtectionFeature(
                     }
                 }
                 if (activate) {
-                    handler?.activate(onResult)
+                    handler?.activate(onResult = onResult)
                 } else {
                     handler?.deactivate(onResult)
                 }

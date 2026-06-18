@@ -22,8 +22,11 @@ internal class GeckoIPProtectionHandler(
 
     private val logger = Logger("IPP:GeckoHandler")
 
-    override fun activate(onResult: (Throwable?) -> Unit) {
-        runtime.ipProtectionController.activate().then(
+    override fun activate(country: IPProtectionHandler.Country?, onResult: (Throwable?) -> Unit) {
+        val geckoCountry = country?.let {
+            IPProtectionController.Country(it.code, it.available)
+        }
+        runtime.ipProtectionController.activate(geckoCountry).then(
             {
                 onResult(null)
                 GeckoResult.fromValue(null)
@@ -32,6 +35,30 @@ internal class GeckoIPProtectionHandler(
                 logger.error("activate() failed", ex)
                 onResult(ex)
                 GeckoResult.fromValue(null)
+            },
+        )
+    }
+
+    override fun switchTo(country: IPProtectionHandler.Country) {
+        runtime.ipProtectionController.switchTo(
+            IPProtectionController.Country(country.code, country.available),
+        )
+    }
+
+    override fun getServerList(onResult: (List<IPProtectionHandler.Country>) -> Unit) {
+        runtime.ipProtectionController.serverList.then<List<IPProtectionController.Country>>(
+            { list ->
+                onResult(
+                    list.orEmpty().map {
+                        IPProtectionHandler.Country(it.code, it.available)
+                    },
+                )
+                GeckoResult()
+            },
+            { throwable ->
+                logger.error("GeckoIPProtectionHandler#getServerList failed.", throwable)
+                onResult(emptyList())
+                GeckoResult()
             },
         )
     }

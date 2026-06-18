@@ -85,10 +85,14 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * @param onVpnToggle Called when the VPN switch is toggled.
  * @param onLearnMoreClick Called when any "Learn more" link is tapped.
  * @param onGetStartedClick Called when the "Get started" button is tapped.
+ * @param countries The list of countries available in the proxy serverlist.
+ * @param selectedCountryCode The ISO code of the currently selected country, if any.
+ * @param onCountrySelected Called with the ISO code when a country is tapped.
  * @param showDebugAction Whether to show the debug menu action in the toolbar.
  * @param onDebugActionClick Called when the debug menu action is tapped.
  * @param onNavigateBack Called when the back navigation icon is tapped.
  */
+@OptIn(ExperimentalAndroidComponentsApi::class)
 @Suppress("LongParameterList")
 @Composable
 fun IPProtectionScreen(
@@ -100,6 +104,9 @@ fun IPProtectionScreen(
     onVpnToggle: (Boolean) -> Unit,
     onLearnMoreClick: () -> Unit,
     onGetStartedClick: () -> Unit,
+    countries: List<IPProtectionHandler.Country> = emptyList(),
+    selectedCountryCode: String? = null,
+    onCountrySelected: (String) -> Unit = {},
     showDebugAction: Boolean = false,
     onDebugActionClick: () -> Unit = {},
     onNavigateBack: () -> Unit,
@@ -151,7 +158,11 @@ fun IPProtectionScreen(
                         HorizontalDivider()
                     }
 
-                    VpnLocationSection()
+                    VpnLocationSection(
+                        countries = countries,
+                        selectedCountryCode = selectedCountryCode,
+                        onCountrySelected = onCountrySelected,
+                    )
                 } else {
                     GetStartedSection(
                         syncingData = syncingData,
@@ -306,8 +317,13 @@ private fun ColumnScope.GetStartedSection(
     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
 }
 
+@OptIn(ExperimentalAndroidComponentsApi::class)
 @Composable
-private fun VpnLocationSection() {
+private fun VpnLocationSection(
+    countries: List<IPProtectionHandler.Country>,
+    selectedCountryCode: String?,
+    onCountrySelected: (String) -> Unit,
+) {
     Text(
         text = stringResource(R.string.ip_protection_location_section),
         style = FirefoxTheme.typography.headline8,
@@ -323,6 +339,20 @@ private fun VpnLocationSection() {
         description = stringResource(R.string.ip_protection_location_recommended_description),
         maxDescriptionLines = Int.MAX_VALUE,
     )
+
+    countries.forEach { country ->
+        val selected = country.code == selectedCountryCode
+        TextListItem(
+            label = country.code,
+            enabled = country.available,
+            onClick = { onCountrySelected(country.code) },
+            iconPainter = if (selected) {
+                painterResource(iconsR.drawable.mozac_ic_checkmark_24)
+            } else {
+                null
+            },
+        )
+    }
 }
 
 @Composable

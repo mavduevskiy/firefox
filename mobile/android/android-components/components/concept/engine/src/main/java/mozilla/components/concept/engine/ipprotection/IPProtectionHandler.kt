@@ -16,10 +16,26 @@ interface IPProtectionHandler {
     /**
      * Activates the IP protection.
      *
+     * @param country The country to route through, or null to use the recommended location.
      * @param onResult Invoked once the activation request resolves. Receives `null` on success or
      *  the [Throwable] that caused the failure.
      */
-    fun activate(onResult: (Throwable?) -> Unit = {})
+    fun activate(country: Country? = null, onResult: (Throwable?) -> Unit = {})
+
+    /**
+     * Switches the active proxy connection to a server in the given [country]. Has no effect if the
+     * proxy is not active.
+     *
+     * @param country The country to switch to.
+     */
+    fun switchTo(country: Country)
+
+    /**
+     * Fetches the list of countries available in the proxy serverlist.
+     *
+     * @param onResult Called with the list of available [Country] entries.
+     */
+    fun getServerList(onResult: (List<Country>) -> Unit)
 
     /**
      * Deactivates the IP protection proxy.
@@ -74,6 +90,17 @@ interface IPProtectionHandler {
     data class EnrollResult(
         val isEnrolledAndEntitled: Boolean,
         val error: String? = null,
+    )
+
+    /**
+     * A country available in the proxy serverlist.
+     *
+     * @property code ISO 3166-1 alpha-2 country code.
+     * @property available Whether the country has at least one available server.
+     */
+    data class Country(
+        val code: String,
+        val available: Boolean,
     )
 
     /**
