@@ -424,16 +424,32 @@ public class IPProtectionController {
   }
 
   /**
-   * Activates the IP proxy.
+   * Activates the IP proxy, using the recommended location.
    *
    * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
    *     IPProxyException} describing the failure.
    */
   @HandlerThread
   public @NonNull GeckoResult<Void> activate() {
+    return activate(null);
+  }
+
+  /**
+   * Activates the IP proxy, optionally routing through a specific country.
+   *
+   * @param country The country to route through, or {@code null} to use the recommended location.
+   * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
+   *     IPProxyException} describing the failure.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> activate(final @Nullable Country country) {
     ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    if (country != null) {
+      bundle.putString("country", country.code);
+    }
     return EventDispatcher.getInstance()
-        .queryVoid("GeckoView:IPProtection:Activate")
+        .queryVoid("GeckoView:IPProtection:Activate", bundle)
         .map(
             null,
             e ->

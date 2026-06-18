@@ -168,7 +168,7 @@ export const GeckoViewIPProtection = {
         break;
       }
       case "GeckoView:IPProtection:Activate": {
-        lazy.IPPProxyManager.start()
+        lazy.IPPProxyManager.start(true, false, aData?.country)
           .then(({ started, error } = {}) => {
             if (started) {
               aCallback.onSuccess();

@@ -19,6 +19,7 @@ exclude: true
 - Added [`IPProtectionController.refreshUsage`][154.4] to request a refresh of proxy usage information, delivered asynchronously via [`Delegate#onUsageChanged`][154.5].
   ([bug 2042799]({{bugzilla}}2042799))
 - Added [`IPProtectionController.getServerList`][154.6] and [`IPProtectionController.Country`][154.7] to retrieve the list of countries available in the proxy serverlist.
+- Added [`IPProtectionController.activate(Country)`][154.8] to activate the proxy routing through a selected country.
 
 [154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
 [154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
@@ -27,13 +28,13 @@ exclude: true
 [154.5]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onUsageChanged(org.mozilla.geckoview.IPProtectionController.UsageInfo)
 [154.6]: {{javadoc_uri}}/IPProtectionController.html#getServerList()
 [154.7]: {{javadoc_uri}}/IPProtectionController.Country.html
+[154.8]: {{javadoc_uri}}/IPProtectionController.html#activate(org.mozilla.geckoview.IPProtectionController.Country)
 
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
   ([bug 1994860]({{bugzilla}}1994860))
 - Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485))
 - Added  [`clearTrackingDb`][153.4] to ContentBlockingController to support clearing all data stored about blocked trackers in previous browsing sessions. ([bug 2042068]({{bugzilla}}2042068))
-+- ⚠️ Removed deprecated [`GeckoRuntimeSettings.getDisableShip`] and [`GeckoRuntimeSettings.Builder.disableShip`].
 
 [153.1]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.SourceType.html
 [153.2]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html#source
@@ -2002,4 +2003,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 05876008a2aa6469f762d21209cca811057f5528
+[api-version]: a82fd4fcc06374108e051c199474ba2996414bbe
