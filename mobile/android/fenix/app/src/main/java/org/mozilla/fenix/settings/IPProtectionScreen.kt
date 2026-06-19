@@ -53,7 +53,6 @@ import mozilla.components.compose.base.Switch
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
-import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.BYTES_PER_GB
@@ -64,7 +63,7 @@ import mozilla.components.feature.ipprotection.store.state.maxDataGb
 import mozilla.components.feature.ipprotection.store.state.remainingDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.list.TextListItem
+import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -75,7 +74,7 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
 /**
  * The main VPN / IP Protection settings screen.
  *
- * @param state Current [IPProtectionHandler.StateInfo] to render.
+ * @param state Current [IPProtectionState] to render.
  * @param snackbarHostState The [SnackbarHostState] used to display snackbars.
  * @param readyToUse Whether the user is entitled to use the service.
  * @param syncingData Whether the data sync is in progress.
@@ -85,14 +84,13 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * @param onVpnToggle Called when the VPN switch is toggled.
  * @param onLearnMoreClick Called when any "Learn more" link is tapped.
  * @param onGetStartedClick Called when the "Get started" button is tapped.
- * @param countries The list of countries available in the proxy serverlist.
- * @param selectedCountryCode The ISO code of the currently selected country, if any.
- * @param onCountrySelected Called with the ISO code when a country is tapped.
+ * @param selectedCountryCode The ISO code of the currently selected egress location, or null for
+ * the recommended location.
+ * @param onLocationClick Called when the location row is tapped to open the location chooser.
  * @param showDebugAction Whether to show the debug menu action in the toolbar.
  * @param onDebugActionClick Called when the debug menu action is tapped.
  * @param onNavigateBack Called when the back navigation icon is tapped.
  */
-@OptIn(ExperimentalAndroidComponentsApi::class)
 @Suppress("LongParameterList")
 @Composable
 fun IPProtectionScreen(
@@ -104,9 +102,8 @@ fun IPProtectionScreen(
     onVpnToggle: (Boolean) -> Unit,
     onLearnMoreClick: () -> Unit,
     onGetStartedClick: () -> Unit,
-    countries: List<IPProtectionHandler.Country> = emptyList(),
     selectedCountryCode: String? = null,
-    onCountrySelected: (String) -> Unit = {},
+    onLocationClick: () -> Unit = {},
     showDebugAction: Boolean = false,
     onDebugActionClick: () -> Unit = {},
     onNavigateBack: () -> Unit,
@@ -159,9 +156,8 @@ fun IPProtectionScreen(
                     }
 
                     VpnLocationSection(
-                        countries = countries,
                         selectedCountryCode = selectedCountryCode,
-                        onCountrySelected = onCountrySelected,
+                        onLocationClick = onLocationClick,
                     )
                 } else {
                     GetStartedSection(
@@ -317,12 +313,10 @@ private fun ColumnScope.GetStartedSection(
     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
 }
 
-@OptIn(ExperimentalAndroidComponentsApi::class)
 @Composable
 private fun VpnLocationSection(
-    countries: List<IPProtectionHandler.Country>,
     selectedCountryCode: String?,
-    onCountrySelected: (String) -> Unit,
+    onLocationClick: () -> Unit,
 ) {
     Text(
         text = stringResource(R.string.ip_protection_location_section),
@@ -334,25 +328,15 @@ private fun VpnLocationSection(
         ),
     )
 
-    TextListItem(
-        label = stringResource(R.string.ip_protection_location_recommended_label),
-        description = stringResource(R.string.ip_protection_location_recommended_description),
-        maxDescriptionLines = Int.MAX_VALUE,
-    )
+    val locationLabel = selectedCountryCode?.let { localizedCountryName(it) }
+        ?: stringResource(R.string.ip_protection_location_recommended_label)
 
-    countries.forEach { country ->
-        val selected = country.code == selectedCountryCode
-        TextListItem(
-            label = country.code,
-            enabled = country.available,
-            onClick = { onCountrySelected(country.code) },
-            iconPainter = if (selected) {
-                painterResource(iconsR.drawable.mozac_ic_checkmark_24)
-            } else {
-                null
-            },
-        )
-    }
+    IconListItem(
+        label = locationLabel,
+        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_globe_24),
+        afterIconPainter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
+        onClick = onLocationClick,
+    )
 }
 
 @Composable

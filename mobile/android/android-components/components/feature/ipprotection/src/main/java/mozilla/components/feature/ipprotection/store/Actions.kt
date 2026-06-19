@@ -47,6 +47,13 @@ sealed class IPProtectionAction : Action {
      * Reports that the most recent activate or deactivate request failed.
      */
     object ToggleFailed : IPProtectionAction()
+
+    /**
+     * Records the user-selected egress location.
+     *
+     * @property code ISO 3166-1 alpha-2 country code, or null for the recommended location.
+     */
+    data class LocationSelected(val code: String?) : IPProtectionAction()
 }
 
 /**

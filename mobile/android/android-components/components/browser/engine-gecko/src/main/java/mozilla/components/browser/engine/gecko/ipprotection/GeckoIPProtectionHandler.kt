@@ -39,9 +39,9 @@ internal class GeckoIPProtectionHandler(
         )
     }
 
-    override fun switchTo(country: IPProtectionHandler.Country) {
+    override fun switchTo(country: IPProtectionHandler.Country?) {
         runtime.ipProtectionController.switchTo(
-            IPProtectionController.Country(country.code, country.available),
+            country?.let { IPProtectionController.Country(it.code, it.available) },
         )
     }
 

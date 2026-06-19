@@ -2821,6 +2821,10 @@
     <string name="ip_protection_location_recommended_label">Recommended</string>
     <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
     <string name="ip_protection_location_recommended_description">Selects the fastest VPN location for you.</string>
+    <!-- Title of the browser VPN location chooser screen, shown in the app bar -->
+    <string name="ip_protection_locations_title">Choose VPN location</string>
+    <!-- Header for the list of countries on the browser VPN location chooser screen -->
+    <string name="ip_protection_locations_header">Locations</string>
     <!-- Badge label shown in the menu item when the browser VPN is active -->
     <string name="preferences_ip_protection_on">On</string>
     <!-- Badge label shown in the menu item when the browser VPN is off -->

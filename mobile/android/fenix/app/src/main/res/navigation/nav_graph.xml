@@ -890,6 +890,13 @@
         android:id="@+id/ipProtectionFragment"
         android:name="org.mozilla.fenix.settings.IPProtectionFragment"
         android:label="@string/ip_protection_title" >
+        <action
+            android:id="@+id/action_ipProtectionFragment_to_ipProtectionLocationsFragment"
+            app:destination="@id/ipProtectionLocationsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <argument
             android:name="start_auth_flow"
             android:defaultValue="false"
@@ -898,6 +905,10 @@
             android:name="entrypoint"
             app:argType="org.mozilla.fenix.components.accounts.FenixFxAEntryPoint" />
     </fragment>
+    <fragment
+        android:id="@+id/ipProtectionLocationsFragment"
+        android:name="org.mozilla.fenix.settings.IPProtectionLocationsFragment"
+        android:label="@string/ip_protection_locations_title" />
     <fragment
         android:id="@+id/aiControlsFragment"
         android:name="org.mozilla.fenix.settings.ai.AIControlsFragment"

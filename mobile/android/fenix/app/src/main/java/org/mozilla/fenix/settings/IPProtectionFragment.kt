@@ -9,10 +9,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -30,7 +28,6 @@ import mozilla.components.feature.ipprotection.IPProtectionWarningBinding
 import mozilla.components.feature.ipprotection.debug.IPProtectionStateDebugContent
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
-import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -83,28 +80,21 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         val promoDate = IsoPromoDeadline(FxNimbus.features.ipProtection.value().promoDeadline)
             .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
 
-        var countries by remember { mutableStateOf(emptyList<IPProtectionHandler.Country>()) }
-        var selectedCountryCode by remember { mutableStateOf<String?>(null) }
-
-        val ready = state.readyToUse()
-        LaunchedEffect(ready) {
-            fetchServerList(ready) { countries = it }
-        }
-
         FirefoxTheme {
             IPProtectionScreen(
                 state = state,
                 snackbarHostState = snackbarHostState,
-                readyToUse = ready,
+                readyToUse = state.readyToUse(),
                 syncingData = state.syncingData(),
                 promoDate = promoDate,
-                countries = countries,
-                selectedCountryCode = selectedCountryCode,
-                onCountrySelected = { code ->
-                    selectedCountryCode = code
-                    switchLocationIfActive(state, code)
+                selectedCountryCode = state.selectedCountryCode,
+                onLocationClick = {
+                    findNavController().navigate(
+                        IPProtectionFragmentDirections
+                            .actionIpProtectionFragmentToIpProtectionLocationsFragment(),
+                    )
                 },
-                onVpnToggle = { enabled -> toggleVpn(enabled, selectedCountryCode) },
+                onVpnToggle = { enabled -> toggleVpn(enabled, state.selectedCountryCode) },
                 onLearnMoreClick = {
                     Vpn.settingsLearnMoreTapped.record(NoExtras())
                     SupportUtils.launchSandboxCustomTab(
@@ -133,26 +123,6 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     IPProtectionStateDebugContent(state)
                 }
             }
-        }
-    }
-
-    @OptIn(ExperimentalAndroidComponentsApi::class)
-    private fun fetchServerList(
-        ready: Boolean,
-        onResult: (List<IPProtectionHandler.Country>) -> Unit,
-    ) {
-        if (ready) {
-            requireComponents.ipProtection.feature.getServerList(onResult)
-        }
-    }
-
-    @OptIn(ExperimentalAndroidComponentsApi::class)
-    private fun switchLocationIfActive(state: IPProtectionState, code: String) {
-        // When already active, selecting a country switches the connection to it.
-        if (state.proxyStatus is Authorized.Active) {
-            requireComponents.ipProtection.feature.switchTo(
-                IPProtectionHandler.Country(code = code, available = true),
-            )
         }
     }
 

@@ -156,6 +156,10 @@ internal fun iPProtectionReducer(
         state.copy(activate = null)
     }
 
+    is IPProtectionAction.LocationSelected -> {
+        state.copy(selectedCountryCode = action.code)
+    }
+
     is InternalAction -> internalReducer(state, action)
 }
 

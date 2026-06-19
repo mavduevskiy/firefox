@@ -232,9 +232,9 @@ class IPProtectionFeature(
      * Switches the active proxy connection to a server in the given [country]. No-ops if the handler
      * has not been registered yet, or if the proxy is not active.
      *
-     * @param country The country to switch to.
+     * @param country The country to switch to, or null to switch to the recommended location.
      */
-    fun switchTo(country: IPProtectionHandler.Country) {
+    fun switchTo(country: IPProtectionHandler.Country?) {
         mainScope.launch {
             withContext(Dispatchers.Main) {
                 handler?.switchTo(country)

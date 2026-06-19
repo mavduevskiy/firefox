@@ -26,9 +26,9 @@ interface IPProtectionHandler {
      * Switches the active proxy connection to a server in the given [country]. Has no effect if the
      * proxy is not active.
      *
-     * @param country The country to switch to.
+     * @param country The country to switch to, or null to switch to the recommended location.
      */
-    fun switchTo(country: Country)
+    fun switchTo(country: Country?)
 
     /**
      * Fetches the list of countries available in the proxy serverlist.
