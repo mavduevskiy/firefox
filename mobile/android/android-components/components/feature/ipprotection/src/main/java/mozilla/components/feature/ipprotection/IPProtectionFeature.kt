@@ -242,6 +242,79 @@ class IPProtectionFeature(
         }
     }
 
+    /**
+     * Fetches the list of site exception origins for which the proxy is disabled. Returns an empty
+     * list if the handler has not been registered yet.
+     *
+     * @param onResult Called with the list of excluded origins.
+     */
+    fun getExceptions(onResult: (List<String>) -> Unit) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.getExceptions(onResult) ?: onResult(emptyList())
+            }
+        }
+    }
+
+    /**
+     * Adds a site exception, disabling the proxy for the origin of [url]. No-ops if the handler has
+     * not been registered yet.
+     *
+     * @param url The URL of the site to exclude.
+     * @param onResult Invoked once the request resolves, with null on success or the failure cause.
+     */
+    fun addException(url: String, onResult: (Throwable?) -> Unit = {}) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.addException(url, onResult)
+            }
+        }
+    }
+
+    /**
+     * Removes a site exception, re-enabling the proxy for [origin]. No-ops if the handler has not
+     * been registered yet.
+     *
+     * @param origin The origin to stop excluding.
+     * @param onResult Invoked once the request resolves, with null on success or the failure cause.
+     */
+    fun removeException(origin: String, onResult: (Throwable?) -> Unit = {}) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.removeException(origin, onResult)
+            }
+        }
+    }
+
+    /**
+     * Removes all site exceptions, re-enabling the proxy for every excluded site. No-ops if the
+     * handler has not been registered yet.
+     *
+     * @param onResult Invoked once the request resolves, with null on success or the failure cause.
+     */
+    fun clearExceptions(onResult: (Throwable?) -> Unit = {}) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.clearExceptions(onResult)
+            }
+        }
+    }
+
+    /**
+     * Checks whether the proxy is disabled for the origin of [url]. Returns false if the handler has
+     * not been registered yet.
+     *
+     * @param url The URL of the site to check.
+     * @param onResult Called with true if the site is excluded.
+     */
+    fun isExcluded(url: String, onResult: (Boolean) -> Unit) {
+        mainScope.launch {
+            withContext(Dispatchers.Main) {
+                handler?.isExcluded(url, onResult) ?: onResult(false)
+            }
+        }
+    }
+
     private suspend fun observeToggle() = withContext(Dispatchers.Main) {
         // Dedupe over the nullable so `true -> null -> true` reads as two edges, not one.
         store.flow()

@@ -288,6 +288,25 @@ class IPProtectionReducerTest {
         )
     }
 
+    @Test
+    fun `WHEN CurrentSiteExcludedChanged is dispatched THEN currentSiteExcluded is updated`() {
+        assertEquals(
+            defaultState.copy(currentSiteExcluded = true),
+            iPProtectionReducer(
+                defaultState,
+                IPProtectionAction.CurrentSiteExcludedChanged(true),
+            ),
+        )
+
+        assertEquals(
+            defaultState.copy(currentSiteExcluded = false),
+            iPProtectionReducer(
+                defaultState.copy(currentSiteExcluded = true),
+                IPProtectionAction.CurrentSiteExcludedChanged(false),
+            ),
+        )
+    }
+
     private fun buildIPProtectionState(
         accountStatus: AccountStatus = AccountStatus.Uninitialized,
     ): IPProtectionState {

@@ -220,6 +220,11 @@ export class GeckoViewStartup {
               "GeckoView:IPProtection:Enroll",
               "GeckoView:IPProtection:RefreshUsage",
               "GeckoView:IPProtection:ServerList:GetList",
+              "GeckoView:IPProtection:Exceptions:GetAll",
+              "GeckoView:IPProtection:Exceptions:Add",
+              "GeckoView:IPProtection:Exceptions:Remove",
+              "GeckoView:IPProtection:Exceptions:Clear",
+              "GeckoView:IPProtection:Exceptions:IsExcluded",
             ],
           });
 

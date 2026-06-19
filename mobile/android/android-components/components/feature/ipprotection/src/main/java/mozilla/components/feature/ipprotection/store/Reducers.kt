@@ -160,6 +160,10 @@ internal fun iPProtectionReducer(
         state.copy(selectedCountryCode = action.code)
     }
 
+    is IPProtectionAction.CurrentSiteExcludedChanged -> {
+        state.copy(currentSiteExcluded = action.excluded)
+    }
+
     is InternalAction -> internalReducer(state, action)
 }
 

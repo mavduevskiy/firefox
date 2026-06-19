@@ -897,6 +897,13 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_ipProtectionFragment_to_ipProtectionExceptionsFragment"
+            app:destination="@id/ipProtectionExceptionsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <argument
             android:name="start_auth_flow"
             android:defaultValue="false"
@@ -909,6 +916,22 @@
         android:id="@+id/ipProtectionLocationsFragment"
         android:name="org.mozilla.fenix.settings.IPProtectionLocationsFragment"
         android:label="@string/ip_protection_locations_title" />
+    <fragment
+        android:id="@+id/ipProtectionExceptionsFragment"
+        android:name="org.mozilla.fenix.settings.IPProtectionExceptionsFragment"
+        android:label="@string/ip_protection_exceptions_title" >
+        <action
+            android:id="@+id/action_ipProtectionExceptionsFragment_to_ipProtectionAddExceptionFragment"
+            app:destination="@id/ipProtectionAddExceptionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+    <fragment
+        android:id="@+id/ipProtectionAddExceptionFragment"
+        android:name="org.mozilla.fenix.settings.IPProtectionAddExceptionFragment"
+        android:label="@string/ip_protection_add_exception_title" />
     <fragment
         android:id="@+id/aiControlsFragment"
         android:name="org.mozilla.fenix.settings.ai.AIControlsFragment"

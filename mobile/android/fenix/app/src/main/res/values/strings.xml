@@ -2825,6 +2825,26 @@
     <string name="ip_protection_locations_title">Choose VPN location</string>
     <!-- Header for the list of countries on the browser VPN location chooser screen -->
     <string name="ip_protection_locations_header">Locations</string>
+    <!-- Label for the row on the browser VPN settings screen that opens the website exceptions screen -->
+    <string name="ip_protection_manage_websites">Manage website settings</string>
+    <!-- Title of the browser VPN website exceptions screen, shown in the app bar -->
+    <string name="ip_protection_exceptions_title">Manage website settings</string>
+    <!-- Header above the list of websites for which the browser VPN is disabled -->
+    <string name="ip_protection_exceptions_header">VPN is off for these websites</string>
+    <!-- Content description for the button that removes a website from the browser VPN exceptions list -->
+    <string name="ip_protection_exceptions_remove_button_content_description">Remove website</string>
+    <!-- Label for the button that re-enables the browser VPN for all websites, clearing every exception -->
+    <string name="ip_protection_exceptions_clear_all_button">Turn on for all sites</string>
+    <!-- Content description for the app bar action that opens the screen for adding a browser VPN website exception -->
+    <string name="ip_protection_exceptions_add_button_content_description">Add a website</string>
+    <!-- Title of the screen for adding a browser VPN website exception, shown in the app bar -->
+    <string name="ip_protection_add_exception_title">Add a website</string>
+    <!-- Label shown above the input field for adding a browser VPN website exception -->
+    <string name="ip_protection_add_exception_label">Website</string>
+    <!-- Placeholder text shown in the input field for adding a browser VPN website exception -->
+    <string name="ip_protection_add_exception_hint">example.com</string>
+    <!-- Label for the button that adds the entered website to the browser VPN exceptions list -->
+    <string name="ip_protection_add_exception_button">Add</string>
     <!-- Badge label shown in the menu item when the browser VPN is active -->
     <string name="preferences_ip_protection_on">On</string>
     <!-- Badge label shown in the menu item when the browser VPN is off -->

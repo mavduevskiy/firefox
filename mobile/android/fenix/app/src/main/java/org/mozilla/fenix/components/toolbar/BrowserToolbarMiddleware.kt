@@ -62,6 +62,7 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
+import mozilla.components.feature.ipprotection.IPProtectionFeature
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
@@ -192,6 +193,8 @@ internal sealed class PageEndActionsInteractions(override val source: Source) : 
  * @param browserScreenStore [BrowserScreenStore] used for integration with other browser screen functionalities.
  * @param browserStore [BrowserStore] to sync from.
  * @param ipProtectionStore [IPProtectionStore] to observe IP protection proxy status.
+ * @param ipProtectionFeature [IPProtectionFeature] used to query whether the current site is a
+ * VPN exception.
  * @param permissionsStorage [SitePermissionsStorage] to find currently selected tab site permissions.
  * @param cookieBannersStorage [CookieBannersStorage] to get the current status of cookie banner ui mode.
  * @param bookmarksStorage [BookmarksStorage] to read and write bookmark data related to the current site.
@@ -220,6 +223,7 @@ class BrowserToolbarMiddleware(
     private val browserScreenStore: BrowserScreenStore,
     private val browserStore: BrowserStore,
     private val ipProtectionStore: IPProtectionStore,
+    private val ipProtectionFeature: IPProtectionFeature,
     private val permissionsStorage: SitePermissionsStorage,
     private val cookieBannersStorage: CookieBannersStorage,
     private val bookmarksStorage: BookmarksStorage,
@@ -277,6 +281,7 @@ class BrowserToolbarMiddleware(
                 observePageSecurityUpdates(store)
                 observePermissionHighlightsUpdates(store)
                 observeIPProtectionUpdates(store)
+                observeCurrentSiteExclusionUpdates(store)
             }
 
             is StartPageActions.SiteInfoClicked -> {
@@ -941,6 +946,7 @@ class BrowserToolbarMiddleware(
                 updateCurrentPageOrigin(store)
                 updateEndBrowserActions(store)
                 updateNavigationActions(store)
+                refreshCurrentSiteExclusion()
             }
         }
     }
@@ -949,8 +955,33 @@ class BrowserToolbarMiddleware(
         ipProtectionStore.observeWhileActive {
             distinctUntilChangedBy { it.proxyStatus }
                 .collect {
+                    refreshCurrentSiteExclusion()
                     updateStartPageActions(store)
                 }
+        }
+    }
+
+    private fun observeCurrentSiteExclusionUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        ipProtectionStore.observeWhileActive {
+            distinctUntilChangedBy { it.currentSiteExcluded }
+                .collect {
+                    updateStartPageActions(store)
+                }
+        }
+    }
+
+    /**
+     * Recomputes whether the currently selected tab's site is a VPN exception and records the
+     * result in the [IPProtectionStore].
+     */
+    private fun refreshCurrentSiteExclusion() {
+        val url = browserStore.state.selectedTab?.content?.url
+        if (url.isNullOrBlank()) {
+            ipProtectionStore.dispatch(IPProtectionAction.CurrentSiteExcludedChanged(false))
+            return
+        }
+        ipProtectionFeature.isExcluded(url) { excluded ->
+            ipProtectionStore.dispatch(IPProtectionAction.CurrentSiteExcludedChanged(excluded))
         }
     }
 
@@ -1329,7 +1360,12 @@ class BrowserToolbarMiddleware(
         highlighted: Boolean = false,
         onClick: BrowserToolbarInteraction,
     ): Action {
-        return if (ipProtectionStore.state.proxyStatus == Authorized.Active) {
+        // Only show the VPN pill when the proxy is active AND the current site is not a saved
+        // exception. For excluded sites we fall back to the regular site-info button, matching the
+        // "VPN off" presentation.
+        val showVpnPill = ipProtectionStore.state.proxyStatus == Authorized.Active &&
+            !ipProtectionStore.state.currentSiteExcluded
+        return if (showVpnPill) {
             Action.AnimatedPillActionRes(
                 iconResId = drawableResId,
                 overlayResId = iconsR.drawable.mozac_ic_globe_24,

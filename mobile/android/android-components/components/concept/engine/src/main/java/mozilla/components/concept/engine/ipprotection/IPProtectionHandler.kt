@@ -38,6 +38,47 @@ interface IPProtectionHandler {
     fun getServerList(onResult: (List<Country>) -> Unit)
 
     /**
+     * Fetches the list of site exception origins for which the proxy is disabled.
+     *
+     * @param onResult Called with the list of excluded origins.
+     */
+    fun getExceptions(onResult: (List<String>) -> Unit)
+
+    /**
+     * Adds a site exception, disabling the proxy for the origin of [url].
+     *
+     * @param url The URL of the site to exclude.
+     * @param onResult Invoked once the request resolves. Receives `null` on success or the
+     *  [Throwable] that caused the failure.
+     */
+    fun addException(url: String, onResult: (Throwable?) -> Unit = {})
+
+    /**
+     * Removes a site exception, re-enabling the proxy for [origin].
+     *
+     * @param origin The origin to stop excluding.
+     * @param onResult Invoked once the request resolves. Receives `null` on success or the
+     *  [Throwable] that caused the failure.
+     */
+    fun removeException(origin: String, onResult: (Throwable?) -> Unit = {})
+
+    /**
+     * Removes all site exceptions, re-enabling the proxy for every excluded site.
+     *
+     * @param onResult Invoked once the request resolves. Receives `null` on success or the
+     *  [Throwable] that caused the failure.
+     */
+    fun clearExceptions(onResult: (Throwable?) -> Unit = {})
+
+    /**
+     * Checks whether the proxy is disabled for the origin of [url].
+     *
+     * @param url The URL of the site to check.
+     * @param onResult Called with `true` if the site is excluded.
+     */
+    fun isExcluded(url: String, onResult: (Boolean) -> Unit)
+
+    /**
      * Deactivates the IP protection proxy.
      *
      * @param onResult Invoked once the deactivation request resolves. Receives `null` on success or

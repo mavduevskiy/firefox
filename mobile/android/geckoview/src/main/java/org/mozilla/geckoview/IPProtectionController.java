@@ -528,6 +528,86 @@ public class IPProtectionController {
         .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
   }
 
+  /**
+   * Gets the list of site exception origins for which the proxy is disabled.
+   *
+   * @return A {@link GeckoResult} that resolves to the list of excluded origins.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<List<String>> getExceptions() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:Exceptions:GetAll")
+        .map(IPProtectionController::exceptionsFromBundle);
+  }
+
+  private static @NonNull List<String> exceptionsFromBundle(final @NonNull GeckoBundle bundle) {
+    final List<String> result = new ArrayList<>();
+    final String[] exceptions = bundle.getStringArray("exceptions");
+    if (exceptions != null) {
+      for (final String origin : exceptions) {
+        result.add(origin);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Adds a site exception, disabling the proxy for the origin of the given URL.
+   *
+   * @param uri The URL of the site to exclude.
+   * @return A {@link GeckoResult} that resolves once the exception has been added.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> addException(final @NonNull String uri) {
+    ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", uri);
+    return EventDispatcher.getInstance().queryVoid("GeckoView:IPProtection:Exceptions:Add", bundle);
+  }
+
+  /**
+   * Removes a site exception, re-enabling the proxy for the given origin.
+   *
+   * @param origin The origin to stop excluding.
+   * @return A {@link GeckoResult} that resolves once the exception has been removed.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> removeException(final @NonNull String origin) {
+    ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("origin", origin);
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:Exceptions:Remove", bundle);
+  }
+
+  /**
+   * Removes all site exceptions, re-enabling the proxy for every excluded site.
+   *
+   * @return A {@link GeckoResult} that resolves once all exceptions have been cleared.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> clearExceptions() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance().queryVoid("GeckoView:IPProtection:Exceptions:Clear");
+  }
+
+  /**
+   * Checks whether the proxy is disabled for the origin of the given URL.
+   *
+   * @param uri The URL of the site to check.
+   * @return A {@link GeckoResult} that resolves to true if the site is excluded.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Boolean> isExcluded(final @NonNull String uri) {
+    ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", uri);
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:Exceptions:IsExcluded", bundle)
+        .map(b -> b != null && b.getBoolean("excluded", false));
+  }
+
   /** Exception type for IP proxy errors. */
   public static class IPProxyException extends RuntimeException {
 

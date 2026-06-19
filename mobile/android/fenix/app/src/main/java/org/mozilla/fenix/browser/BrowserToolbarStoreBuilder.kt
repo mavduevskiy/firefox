@@ -92,6 +92,7 @@ object BrowserToolbarStoreBuilder {
                         browserScreenStore = browserScreenStore,
                         browserStore = browserStore,
                         ipProtectionStore = components.ipProtection.store,
+                        ipProtectionFeature = components.ipProtection.feature,
                         permissionsStorage = components.core.geckoSitePermissionsStorage,
                         cookieBannersStorage = components.core.cookieBannersStorage,
                         bookmarksStorage = activity.components.core.bookmarksStorage,

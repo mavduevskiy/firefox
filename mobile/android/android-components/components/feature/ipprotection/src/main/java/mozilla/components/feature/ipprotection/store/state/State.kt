@@ -28,6 +28,8 @@ const val BYTES_PER_GB = 1024 * 1024 * 1024f
  * @property activate To turn protection on or off.
  * @property selectedCountryCode ISO 3166-1 alpha-2 code of the user-selected egress location, or
  * null to use the recommended (anycast) location.
+ * @property currentSiteExcluded Whether the currently displayed site is a saved exception for which
+ * the proxy is disabled, even while the VPN is otherwise active.
  */
 data class IPProtectionState(
     val eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
@@ -41,6 +43,7 @@ data class IPProtectionState(
     val proxyActiveShown: Boolean = false,
     val activate: Boolean? = null,
     val selectedCountryCode: String? = null,
+    val currentSiteExcluded: Boolean = false,
 ) : State
 
 /**

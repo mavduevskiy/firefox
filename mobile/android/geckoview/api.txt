@@ -2287,16 +2287,21 @@ package org.mozilla.geckoview {
   public class IPProtectionController {
     method @HandlerThread @NonNull public GeckoResult<Void> activate();
     method @HandlerThread @NonNull public GeckoResult<Void> activate(@Nullable IPProtectionController.Country);
+    method @HandlerThread @NonNull public GeckoResult<Void> addException(@NonNull String);
+    method @HandlerThread @NonNull public GeckoResult<Void> clearExceptions();
     method @HandlerThread @NonNull public GeckoResult<Void> deactivate();
     method @HandlerThread @NonNull public GeckoResult<IPProtectionController.EnrollResult> enroll();
     method @Nullable @UiThread public IPProtectionController.AuthProvider getAuthProvider();
     method @Nullable @UiThread public IPProtectionController.Delegate getDelegate();
+    method @HandlerThread @NonNull public GeckoResult<List<String>> getExceptions();
     method @HandlerThread @NonNull public GeckoResult<IPProtectionController.ProxyState> getProxyState();
     method @HandlerThread @NonNull public GeckoResult<List<IPProtectionController.Country>> getServerList();
     method @HandlerThread @NonNull public GeckoResult<Integer> getServiceState();
     method @HandlerThread @NonNull public GeckoResult<Void> init();
+    method @HandlerThread @NonNull public GeckoResult<Boolean> isExcluded(@NonNull String);
     method @NonNull @UiThread public GeckoResult<Void> notifySignInStateChanged(boolean);
     method @HandlerThread @NonNull public GeckoResult<Void> refreshUsage();
+    method @HandlerThread @NonNull public GeckoResult<Void> removeException(@NonNull String);
     method @UiThread public void setAuthProvider(@Nullable IPProtectionController.AuthProvider);
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
     method @HandlerThread @NonNull public GeckoResult<Boolean> switchTo(@Nullable IPProtectionController.Country);

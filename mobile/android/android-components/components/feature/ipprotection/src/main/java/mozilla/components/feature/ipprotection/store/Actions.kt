@@ -54,6 +54,14 @@ sealed class IPProtectionAction : Action {
      * @property code ISO 3166-1 alpha-2 country code, or null for the recommended location.
      */
     data class LocationSelected(val code: String?) : IPProtectionAction()
+
+    /**
+     * Records whether the currently displayed site is a saved exception for which the proxy is
+     * disabled.
+     *
+     * @property excluded True if the current site is excluded from the VPN.
+     */
+    data class CurrentSiteExcludedChanged(val excluded: Boolean) : IPProtectionAction()
 }
 
 /**

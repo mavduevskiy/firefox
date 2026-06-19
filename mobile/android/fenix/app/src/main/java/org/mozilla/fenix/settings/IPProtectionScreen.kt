@@ -64,6 +64,7 @@ import mozilla.components.feature.ipprotection.store.state.remainingDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
+import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -87,6 +88,7 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * @param selectedCountryCode The ISO code of the currently selected egress location, or null for
  * the recommended location.
  * @param onLocationClick Called when the location row is tapped to open the location chooser.
+ * @param onManageWebsitesClick Called when the "Manage website settings" row is tapped.
  * @param showDebugAction Whether to show the debug menu action in the toolbar.
  * @param onDebugActionClick Called when the debug menu action is tapped.
  * @param onNavigateBack Called when the back navigation icon is tapped.
@@ -104,6 +106,7 @@ fun IPProtectionScreen(
     onGetStartedClick: () -> Unit,
     selectedCountryCode: String? = null,
     onLocationClick: () -> Unit = {},
+    onManageWebsitesClick: () -> Unit = {},
     showDebugAction: Boolean = false,
     onDebugActionClick: () -> Unit = {},
     onNavigateBack: () -> Unit,
@@ -158,6 +161,12 @@ fun IPProtectionScreen(
                     VpnLocationSection(
                         selectedCountryCode = selectedCountryCode,
                         onLocationClick = onLocationClick,
+                    )
+
+                    TextListItem(
+                        label = stringResource(R.string.ip_protection_manage_websites),
+                        onClick = onManageWebsitesClick,
+                        iconPainter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
                     )
                 } else {
                     GetStartedSection(

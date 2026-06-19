@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs",
   IPPDummyAuthProvider:
     "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs",
+  IPPExceptionsManager:
+    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPGpiAuthProvider:
     "moz-src:///toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs",
   IPPProxyManager:
@@ -30,7 +32,23 @@ const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewIPProtection");
 
 const AUTH_PROVIDER_PREF = "toolkit.ipProtection.android.authProvider";
 
+// Must match PERM_NAME in IPPExceptionsManager.sys.mjs. Site exceptions are
+// stored as "ipp-vpn" permissions with a DENY capability.
+const IPP_VPN_PERM = "ipp-vpn";
+
 let initialized = false;
+
+/**
+ * Builds a content principal for the given URL, used to look up or modify the
+ * site's "ipp-vpn" exception permission.
+ *
+ * @param {string} url
+ * @returns {nsIPrincipal}
+ */
+function principalFromUrl(url) {
+  const uri = Services.io.newURI(url);
+  return Services.scriptSecurityManager.createContentPrincipal(uri, {});
+}
 
 export const GeckoViewIPProtection = {
   // Events dispatched by components in toolkit/components/ipprotection.
@@ -67,6 +85,11 @@ export const GeckoViewIPProtection = {
   // Events dispatched from IPProtectionController.java via EventDispatcher.
   onEvent(aEvent, aData, aCallback) {
     debug`onEvent ${aEvent}`;
+
+    if (aEvent.startsWith("GeckoView:IPProtection:Exceptions:")) {
+      this.onExceptionsEvent(aEvent, aData, aCallback);
+      return;
+    }
 
     switch (aEvent) {
       case "GeckoView:IPProtection:Init": {
@@ -231,6 +254,69 @@ export const GeckoViewIPProtection = {
               typeof err === "string" ? err : (err?.message ?? "generic-error")
             );
           });
+        break;
+      }
+    }
+  },
+
+  // Site exception ("ipp-vpn" permission) events dispatched from
+  // IPProtectionController.java. Split out from onEvent to keep its complexity down.
+  onExceptionsEvent(aEvent, aData, aCallback) {
+    switch (aEvent) {
+      case "GeckoView:IPProtection:Exceptions:GetAll": {
+        const exceptions = [];
+        for (const perm of Services.perms.getAllByTypes([IPP_VPN_PERM])) {
+          if (perm.capability === Ci.nsIPermissionManager.DENY_ACTION) {
+            exceptions.push(perm.principal.origin);
+          }
+        }
+        aCallback.onSuccess({ exceptions });
+        break;
+      }
+      case "GeckoView:IPProtection:Exceptions:Add": {
+        try {
+          lazy.IPPExceptionsManager.addExclusion(principalFromUrl(aData.url));
+          aCallback.onSuccess();
+        } catch (err) {
+          aCallback.onError(
+            typeof err === "string" ? err : (err?.message ?? "generic-error")
+          );
+        }
+        break;
+      }
+      case "GeckoView:IPProtection:Exceptions:Remove": {
+        try {
+          lazy.IPPExceptionsManager.removeExclusion(
+            principalFromUrl(aData.origin)
+          );
+          aCallback.onSuccess();
+        } catch (err) {
+          aCallback.onError(
+            typeof err === "string" ? err : (err?.message ?? "generic-error")
+          );
+        }
+        break;
+      }
+      case "GeckoView:IPProtection:Exceptions:Clear": {
+        for (const perm of Services.perms.getAllByTypes([IPP_VPN_PERM])) {
+          if (perm.capability === Ci.nsIPermissionManager.DENY_ACTION) {
+            Services.perms.removeFromPrincipal(perm.principal, IPP_VPN_PERM);
+          }
+        }
+        aCallback.onSuccess();
+        break;
+      }
+      case "GeckoView:IPProtection:Exceptions:IsExcluded": {
+        try {
+          const excluded = lazy.IPPExceptionsManager.hasExclusion(
+            principalFromUrl(aData.url)
+          );
+          aCallback.onSuccess({ excluded });
+        } catch (err) {
+          aCallback.onError(
+            typeof err === "string" ? err : (err?.message ?? "generic-error")
+          );
+        }
         break;
       }
     }

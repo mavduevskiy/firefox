@@ -21,6 +21,8 @@ exclude: true
 - Added [`IPProtectionController.getServerList`][154.6] and [`IPProtectionController.Country`][154.7] to retrieve the list of countries available in the proxy serverlist.
 - Added [`IPProtectionController.activate(Country)`][154.8] to activate the proxy routing through a selected country.
 - Added [`IPProtectionController.switchTo(Country)`][154.9] to switch the active proxy connection to a server in a different country, resolving to whether the connection was switched.
+- Added [`IPProtectionController.getExceptions`][154.10], [`IPProtectionController.addException`][154.11], [`IPProtectionController.removeException`][154.12], [`IPProtectionController.clearExceptions`][154.13] and [`IPProtectionController.isExcluded`][154.14] to manage the site exceptions for which the proxy is disabled.
+  ([bug 2046406]({{bugzilla}}2046406))
 
 [154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
 [154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
@@ -31,6 +33,11 @@ exclude: true
 [154.7]: {{javadoc_uri}}/IPProtectionController.Country.html
 [154.8]: {{javadoc_uri}}/IPProtectionController.html#activate(org.mozilla.geckoview.IPProtectionController.Country)
 [154.9]: {{javadoc_uri}}/IPProtectionController.html#switchTo(org.mozilla.geckoview.IPProtectionController.Country)
+[154.10]: {{javadoc_uri}}/IPProtectionController.html#getExceptions()
+[154.11]: {{javadoc_uri}}/IPProtectionController.html#addException(java.lang.String)
+[154.12]: {{javadoc_uri}}/IPProtectionController.html#removeException(java.lang.String)
+[154.13]: {{javadoc_uri}}/IPProtectionController.html#clearExceptions()
+[154.14]: {{javadoc_uri}}/IPProtectionController.html#isExcluded(java.lang.String)
 
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
@@ -2005,4 +2012,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: afa3fdc68948ae4e6cfd325cfe074bb637f8e1a8
+[api-version]: 563f493ce3cb864c190ed747df4317ab5c760abe

@@ -94,6 +94,12 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                             .actionIpProtectionFragmentToIpProtectionLocationsFragment(),
                     )
                 },
+                onManageWebsitesClick = {
+                    findNavController().navigate(
+                        IPProtectionFragmentDirections
+                            .actionIpProtectionFragmentToIpProtectionExceptionsFragment(),
+                    )
+                },
                 onVpnToggle = { enabled -> toggleVpn(enabled, state.selectedCountryCode) },
                 onLearnMoreClick = {
                     Vpn.settingsLearnMoreTapped.record(NoExtras())

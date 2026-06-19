@@ -79,6 +79,7 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
+import mozilla.components.feature.ipprotection.IPProtectionFeature
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
@@ -215,6 +216,7 @@ class BrowserToolbarMiddlewareTest {
     private val publicSuffixList = PublicSuffixList(testContext)
     private val bookmarksStorage: BookmarksStorage = mockk()
     private val ipProtectionStore = IPProtectionStore()
+    private val ipProtectionFeature: IPProtectionFeature = mockk(relaxed = true)
     private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private lateinit var appStore: AppStore
 
@@ -2270,6 +2272,42 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN ip protection is active AND the current site is excluded WHEN initializing THEN show the regular site info button`() = runTest(testDispatcher) {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val ipProtectionFeature = mockk<IPProtectionFeature>(relaxed = true)
+        every { ipProtectionFeature.isExcluded(any(), any()) } answers {
+            secondArg<(Boolean) -> Unit>().invoke(true)
+        }
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        every { tab.content.url } returns "https://www.mozilla.org"
+        every { tab.content.securityInfo } returns SecurityInfo.Secure()
+        every { tab.trackingProtection.enabled } returns true
+        every { tab.trackingProtection.ignoredOnTrackingProtection } returns false
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            ipProtectionFeature = ipProtectionFeature,
+            useCases = useCases,
+        )
+
+        val toolbarStore = buildStore(middleware)
+
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        // An excluded site shows the regular site-info button, not the active VPN pill.
+        val siteInfo = toolbarPageActions[0] as ActionButtonRes
+        assertEquals(ActionButton.State.DEFAULT, siteInfo.state)
+        assertEquals(iconsR.drawable.mozac_ic_shield_checkmark_24, siteInfo.drawableResId)
+    }
+
+    @Test
     fun `GIVEN ip protection is active and security is unknown WHEN initializing THEN show animated pill with globe icon`() = runTest(testDispatcher) {
         val ipProtectionStore = IPProtectionStore(
             initialState = IPProtectionState(proxyStatus = Authorized.Active),
@@ -3700,6 +3738,7 @@ class BrowserToolbarMiddlewareTest {
         browserScreenStore: BrowserScreenStore = this.browserScreenStore,
         browserStore: BrowserStore = this.browserStore,
         ipProtectionStore: IPProtectionStore = this.ipProtectionStore,
+        ipProtectionFeature: IPProtectionFeature = this.ipProtectionFeature,
         permissionsStorage: SitePermissionsStorage = this.permissionsStorage,
         cookieBannersStorage: CookieBannersStorage = this.cookieBannersStorage,
         trackingProtectionUseCases: TrackingProtectionUseCases = this.trackingProtectionUseCases,
@@ -3724,6 +3763,7 @@ class BrowserToolbarMiddlewareTest {
         browserScreenStore = browserScreenStore,
         browserStore = browserStore,
         ipProtectionStore = ipProtectionStore,
+        ipProtectionFeature = ipProtectionFeature,
         permissionsStorage = permissionsStorage,
         cookieBannersStorage = cookieBannersStorage,
         bookmarksStorage = bookmarksStorage,

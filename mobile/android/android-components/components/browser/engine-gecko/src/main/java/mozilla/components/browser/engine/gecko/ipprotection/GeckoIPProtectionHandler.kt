@@ -63,6 +63,76 @@ internal class GeckoIPProtectionHandler(
         )
     }
 
+    override fun getExceptions(onResult: (List<String>) -> Unit) {
+        runtime.ipProtectionController.exceptions.then<List<String>>(
+            { list ->
+                onResult(list.orEmpty())
+                GeckoResult()
+            },
+            { throwable ->
+                logger.error("GeckoIPProtectionHandler#getExceptions failed.", throwable)
+                onResult(emptyList())
+                GeckoResult()
+            },
+        )
+    }
+
+    override fun addException(url: String, onResult: (Throwable?) -> Unit) {
+        runtime.ipProtectionController.addException(url).then(
+            {
+                onResult(null)
+                GeckoResult.fromValue(null)
+            },
+            { ex ->
+                logger.error("addException() failed", ex)
+                onResult(ex)
+                GeckoResult.fromValue(null)
+            },
+        )
+    }
+
+    override fun removeException(origin: String, onResult: (Throwable?) -> Unit) {
+        runtime.ipProtectionController.removeException(origin).then(
+            {
+                onResult(null)
+                GeckoResult.fromValue(null)
+            },
+            { ex ->
+                logger.error("removeException() failed", ex)
+                onResult(ex)
+                GeckoResult.fromValue(null)
+            },
+        )
+    }
+
+    override fun clearExceptions(onResult: (Throwable?) -> Unit) {
+        runtime.ipProtectionController.clearExceptions().then(
+            {
+                onResult(null)
+                GeckoResult.fromValue(null)
+            },
+            { ex ->
+                logger.error("clearExceptions() failed", ex)
+                onResult(ex)
+                GeckoResult.fromValue(null)
+            },
+        )
+    }
+
+    override fun isExcluded(url: String, onResult: (Boolean) -> Unit) {
+        runtime.ipProtectionController.isExcluded(url).then<Boolean>(
+            { excluded ->
+                onResult(excluded == true)
+                GeckoResult()
+            },
+            { throwable ->
+                logger.error("GeckoIPProtectionHandler#isExcluded failed.", throwable)
+                onResult(false)
+                GeckoResult()
+            },
+        )
+    }
+
     override fun deactivate(onResult: (Throwable?) -> Unit) {
         runtime.ipProtectionController.deactivate().then(
             {
