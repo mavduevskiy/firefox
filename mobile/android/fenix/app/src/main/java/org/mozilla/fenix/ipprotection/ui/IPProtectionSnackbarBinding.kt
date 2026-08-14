@@ -35,6 +35,7 @@ import org.mozilla.fenix.snackbar.SnackbarBinding
 class IPProtectionSnackbarBinding(
     private val appStore: AppStore,
     private val snackbarDelegate: FenixSnackbarDelegate,
+    private val onSnackbarShown: () -> Unit = {},
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
@@ -52,6 +53,7 @@ class IPProtectionSnackbarBinding(
                         duration = Snackbar.LENGTH_SHORT,
                     )
 
+                    onSnackbarShown.invoke()
                     appStore.dispatch(SnackbarAction.SnackbarShown)
                 }
             }

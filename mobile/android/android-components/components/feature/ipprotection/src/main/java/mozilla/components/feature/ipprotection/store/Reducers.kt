@@ -23,7 +23,8 @@ import mozilla.components.feature.ipprotection.store.state.Uninitialized
 internal fun iPProtectionReducer(
     state: IPProtectionState,
     action: IPProtectionAction,
-): IPProtectionState = when (action) {
+): IPProtectionState {
+    val newState = when (action) {
     is IPProtectionAction.EligibilityChanged -> {
         state.copy(eligibilityStatus = action.eligibility)
     }
@@ -108,21 +109,15 @@ internal fun iPProtectionReducer(
             ServiceState.OptedOut,
             ServiceState.Unavailable,
             ServiceState.Uninitialized,
-                -> {
-                return state
-            }
+                -> state
 
             ServiceState.Ready -> {
-                return when (state.proxyStatus) {
-                    Authorized.Idle -> {
-                        state.copy(activate = true)
-                    }
+                when (state.proxyStatus) {
+                    Authorized.Idle -> state.copy(activate = true)
 
                     Authorized.ConnectionError,
                     Authorized.Active,
-                    -> {
-                        state.copy(activate = false)
-                    }
+                    -> state.copy(activate = false)
 
                     Authorized.Activating,
                     Authorized.DataLimitReached,
@@ -142,7 +137,7 @@ internal fun iPProtectionReducer(
                     status == AccountStatus.NoAccount
 
                 if (requiresAuthentication) {
-                    return state.copy(
+                    return@iPProtectionReducer state.copy(
                         accountState = state.accountState.copy(
                             status = AccountStatus.RequestingAuthentication,
                         ),
@@ -153,7 +148,7 @@ internal fun iPProtectionReducer(
                 // so we need to authorize the service first to get the account ready to request
                 // enrollment keys.
                 if (status == AccountStatus.NeedsAuthorization) {
-                    return state.copy(
+                    return@iPProtectionReducer state.copy(
                         accountState = state.accountState.copy(
                             status = AccountStatus.RequestingAuthorization,
                         ),
@@ -170,7 +165,7 @@ internal fun iPProtectionReducer(
                 // Ideally, we want to have an explicit state transition path for an account check;
                 // for now, that is what we ship with.
                 if (status == AccountStatus.TryAgain) {
-                    return state.copy(
+                    return@iPProtectionReducer state.copy(
                         accountState = state.accountState.copy(
                             status = AccountStatus.RequestingAuthorization,
                         ),
@@ -180,10 +175,10 @@ internal fun iPProtectionReducer(
                 if (status == AccountStatus.Authenticated) {
                     throw IllegalStateException("VPN state machine is in a bad state")
                 }
+
+                state
             }
         }
-
-        state
     }
 
     is IPProtectionAction.ProxyActiveShown -> {
@@ -226,6 +221,14 @@ internal fun iPProtectionReducer(
     )
 
     is InternalAction -> internalReducer(state, action)
+}
+
+    println("iPProtectionReducer, action = $action")
+    println("iPProtectionReducer, before: eligibilityStatus = ${state.eligibilityStatus}, serviceStatus = ${state.serviceStatus}, accountStatus = ${state.accountState.status}, remainingDataBytes = ${state.remainingDataBytes}")
+    println("iPProtectionReducer, after: eligibilityStatus = ${newState.eligibilityStatus}, serviceStatus = ${newState.serviceStatus}, accountStatus = ${newState.accountState.status}, remainingDataBytes = ${state.remainingDataBytes}")
+    println("iPProtectionReducer, _____________________________________________________________________________________________________________________________________________")
+
+    return newState
 }
 
 internal fun internalReducer(

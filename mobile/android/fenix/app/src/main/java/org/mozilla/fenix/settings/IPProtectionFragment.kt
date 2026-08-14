@@ -20,6 +20,7 @@ import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import kotlinx.coroutines.delay
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
@@ -50,6 +51,7 @@ import java.time.LocalDate
 class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private var showDebugDialog by mutableStateOf(false)
+    private var stopClicking by mutableStateOf(false)
 
     private val args: IPProtectionFragmentArgs by navArgs()
     private val fxaAccountAuthFlow = ViewBoundFeatureWrapper<IPProtectionFxaAuthFlow>()
@@ -86,6 +88,16 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
         LaunchedEffect(Unit) {
            requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckAccount)
+        }
+
+        val syncing = state.syncingData()
+        LaunchedEffect(syncing, stopClicking) {
+            if (!syncing && !stopClicking) {
+                while (!stopClicking) {
+                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                    delay(1)
+                }
+            }
         }
 
         FirefoxTheme {
@@ -158,6 +170,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             feature = IPProtectionWarningBinding(
                 store = requireComponents.ipProtection.store,
                 proxyUnavailable = {
+                    stopClicking = true
                     Vpn.proxyUnavailable.record()
                     findNavController().navigate(
                         HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog(),
@@ -176,6 +189,9 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     scope = viewLifecycleOwner.lifecycleScope,
                     context = requireContext(),
                 ),
+                onSnackbarShown = {
+                    stopClicking = true
+                },
             ),
             owner = this,
             view = view,
@@ -230,5 +246,11 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
     override fun onResume() {
         super.onResume()
         hideToolbar()
+        stopClicking = false
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopClicking = true
     }
 }

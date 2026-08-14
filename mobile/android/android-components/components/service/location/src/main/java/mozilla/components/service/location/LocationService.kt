@@ -50,7 +50,7 @@ interface LocationService {
          * instead of `null` which indicates a failure.
          */
         fun default() = object : LocationService {
-            override suspend fun fetchRegion(readFromCache: Boolean): Region? = Region("XX", "None")
+            override suspend fun fetchRegion(readFromCache: Boolean): Region? = Region("CA", "None")
             override fun hasRegionCached(): Boolean = true
         }
     }
