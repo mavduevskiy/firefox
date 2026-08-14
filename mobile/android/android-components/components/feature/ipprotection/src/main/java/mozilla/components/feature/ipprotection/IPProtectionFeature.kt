@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaException
 import mozilla.components.ExperimentalAndroidComponentsApi
@@ -34,6 +35,7 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.support.base.log.logger.Logger
+import kotlin.coroutines.resume
 
 /**
  * Feature that coordinates the IP protection proxy service. It observes [IPProtectionStore] for
@@ -218,18 +220,24 @@ class IPProtectionFeature(
             .distinctUntilChanged()
             .filterNotNull()
             .collect { activate ->
-                val onResult: (Throwable?) -> Unit = { err ->
-                    if (err != null) {
-                        store.dispatch(IPProtectionAction.ToggleFailed(err))
-                    }
-                }
-                if (activate) {
-                    handler?.activate(
-                        countryCode = store.state.locationState.selectedLocation.countryCode,
-                        onResult = onResult,
-                    )
-                } else {
-                    handler?.deactivate(onResult)
+                suspendCancellableCoroutine { continuation ->
+                    handler?.let {
+                        val onResult: (Throwable?) -> Unit = { err ->
+                            if (err != null) {
+                                store.dispatch(IPProtectionAction.ToggleFailed(err))
+                            }
+                            continuation.resume(Unit)
+                        }
+
+                        if (activate) {
+                            it.activate(
+                                countryCode = store.state.locationState.selectedLocation.countryCode,
+                                onResult = onResult,
+                            )
+                        } else {
+                            it.deactivate(onResult)
+                        }
+                    } ?: continuation.resume(Unit)
                 }
             }
     }
