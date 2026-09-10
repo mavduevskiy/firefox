@@ -26,7 +26,8 @@ internal object TakeoutMessageParser {
 
         result.optJSONObject("success")?.let { success ->
             val actionId = success.optString("actionID").takeIf { it.isNotEmpty() } ?: return null
-            return TakeoutStep.Success(actionId)
+            val detail = success.optString("detail").takeIf { it.isNotEmpty() }
+            return TakeoutStep.Success(actionId, detail)
         }
 
         result.optJSONObject("error")?.let { error ->

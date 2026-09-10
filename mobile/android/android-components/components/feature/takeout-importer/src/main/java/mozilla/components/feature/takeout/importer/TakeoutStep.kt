@@ -10,7 +10,7 @@ package mozilla.components.feature.takeout.importer
  */
 sealed class TakeoutStep {
     /** A step from the content script completed successfully. */
-    data class Success(val actionId: String) : TakeoutStep()
+    data class Success(val actionId: String, val detail: String? = null) : TakeoutStep()
 
     /** A step from the content script failed. [actionId] may be null if no step had run yet. */
     data class Failure(val actionId: String?, val detail: String? = null) : TakeoutStep()
