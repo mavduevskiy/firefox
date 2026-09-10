@@ -5,6 +5,7 @@
 (() => {
   const MESSAGE_NAME = "takeoutStep";
   const MANAGE_ARCHIVE_BASE = "/manage/archive";
+  const MANAGE_ARCHIVE = "/manage";
 
   function report(actionID, status, detail) {
     browser.runtime.sendMessage({
@@ -45,6 +46,35 @@
       }, timeoutMs);
     });
   }
+
+
+  function waitForElementGone(
+    selector,
+    { timeoutMs = 25000, root = document } = {}
+  ) {
+    return new Promise((resolve, reject) => {
+      if (!root.querySelector(selector)) {
+        resolve();
+        return;
+      }
+      const observer = new MutationObserver(() => {
+        if (!root.querySelector(selector)) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(root.body || root, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+      });
+      setTimeout(() => {
+        observer.disconnect();
+        reject(new Error(`timeout waiting for ${selector} to disappear`));
+      }, timeoutMs);
+    });
+  }
+
 
   const POST_CLICK_SETTLE_MS = 500;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -106,7 +136,8 @@
       'div[role="tabpanel"] > div:nth-child(1) > div:nth-child(2) button, div[role="tabpanel"] button[aria-label="Next step"]',
     createExportButton: 'div[data-configure-step="1"] button',
     archiveIdHolder: "div[data-archive-id]",
-    downloadLink: 'a[href*="&i=0&user="]',
+    downloadLink: 'div[data-is-downloaded="false"] a[href*="&i=0&user="]',
+    pendingRequestBanner: 'div[data-in-progress="true"][data-archive-id]',
   };
 
   // Wait up to 5 minutes for Google to finish creating the archive on the
@@ -168,28 +199,41 @@
     // 10-11. Request export.
     await scrollIntoView("create-export-scroll", SELECTORS.createExportButton);
     await clickWhenReady("create-export-click", SELECTORS.createExportButton);
-    await sleep(5000);
-    // 12. Parse the archive id Google just minted, then jump to the manage
-    // page so the next document_idle injection picks up the download path.
-    const exportId = await findExportId();
-    if (!exportId) {
-      failure("export-id-missing");
-      return;
-    }
-    success("export-id-found", exportId);
-    window.location.href = `${MANAGE_ARCHIVE_BASE}/${exportId}`;
+    window.location.href = `${MANAGE_ARCHIVE}`;
+  }
+
+  async function runManageExports() {
+      // 13. Wait for the download link to appear and click it. Google can take
+      // a long time to actually produce the archive; the user has already left
+      // the configuration screen at this point so a 5-minute wait is fine.
+      const card = await waitForElement('div[data-in-progress="true"][data-archive-id]');
+      const id = card.getAttribute("data-archive-id");
+      console.log("WOW: wound the id!", id)
+
+      await waitForElementGone('div[data-in-progress="true"][data-archive-id]', LONG);
+      window.location.href = `${MANAGE_ARCHIVE_BASE}/${id}`;
   }
 
   async function runArchiveDownload() {
     success("manage-archive-loaded");
-    // 13. Wait for the download link to appear and click it. Google can take
-    // a long time to actually produce the archive; the user has already left
-    // the configuration screen at this point so a 5-minute wait is fine.
+    // the download page behaves funny - pressing the download button reloads the page and starts
+    // the download on the reload with some delay, so we want to avoid falling into a infinite load
+    // loop.
+    // Sometimes, a re-auth is required as well - that's an edge case we should add support for.
+    const archiveId = location.pathname.split("/").pop();
+    const guardKey = `mozacTakeoutDownloaded:${archiveId}`;
+    if (sessionStorage.getItem(guardKey)) {
+      success("download-already-triggered", archiveId);
+      return;
+    }
     try {
-      await clickWhenReady("download-link-click", SELECTORS.downloadLink, LONG);
+      const el = await waitForElement(SELECTORS.downloadLink, LONG);
+      sessionStorage.setItem(guardKey, "1");
+      success("download-link-click");
+      el.click();
       success("download-triggered");
-    } catch (_e) {
-      // clickWhenReady already reported the per-step failure.
+    } catch (e) {
+      failure("download-link-click", String(e?.message || e));
     }
   }
 
@@ -200,8 +244,10 @@
     try {
       if (location.pathname === "/") {
         await runExportConfiguration();
-      } else if (location.pathname.startsWith(MANAGE_ARCHIVE_BASE)) {
+      }  else if (location.pathname.startsWith(MANAGE_ARCHIVE_BASE)) {
         await runArchiveDownload();
+      } else if (location.pathname.startsWith(MANAGE_ARCHIVE)) {
+        await runManageExports();
       }
     } catch (_e) {
       // Per-step failure has already been reported.
