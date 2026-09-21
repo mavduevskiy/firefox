@@ -897,7 +897,7 @@ private fun BookmarksListTopBarActionsNoSelection(
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
-    } else if (store.state.showBookmarksImport) {
+    } else if (store.state.showBookmarksImport || store.state.showBookmarksImportFromGoogle) {
         Box {
             IconButton(
                 onClick = { store.dispatch(RootOverflowMenuClicked) },
@@ -983,13 +983,24 @@ private fun RootBookmarksOverflowMenu(store: BookmarksStore) {
     }
         .collectAsState(initial = store.state.rootMenuShown)
 
-    val menuItems =
-        listOf(
-            MenuItem.TextItem(
-                text = Text.Resource(R.string.bookmark_import_menu_button),
-                onClick = { store.dispatch(ImportAction.ImportFileClicked.FromMenu) },
+    val menuItems = buildList {
+        if (store.state.showBookmarksImport) {
+            add(
+                MenuItem.TextItem(
+                    text = Text.Resource(R.string.bookmark_import_menu_button),
+                    onClick = { store.dispatch(ImportAction.ImportFileClicked.FromMenu) },
+                )
             )
-        )
+        }
+        if (store.state.showBookmarksImportFromGoogle) {
+            add(
+                MenuItem.TextItem(
+                    text = Text.Resource(R.string.bookmark_import_from_google_menu_button),
+                    onClick = { store.dispatch(ImportAction.ImportFromGoogleClicked) },
+                )
+            )
+        }
+    }
 
     DropdownMenu(
         menuItems = menuItems,
@@ -1532,6 +1543,7 @@ private fun EditBookmarkScreenPreview() {
                     selectedItems = listOf(),
                     rootMenuShown = false,
                     showBookmarksImport = true,
+                    showBookmarksImportFromGoogle = true,
                     sortMenuShown = false,
                     sortOrder = BookmarksListSortOrder.default,
                     recursiveSelectedCount = null,
@@ -1597,6 +1609,7 @@ private fun BookmarksScreenPreview() {
                     selectedItems = listOf(),
                     rootMenuShown = false,
                     showBookmarksImport = true,
+                    showBookmarksImportFromGoogle = true,
                     sortMenuShown = false,
                     sortOrder = BookmarksListSortOrder.default,
                     recursiveSelectedCount = null,
@@ -1640,6 +1653,7 @@ private fun EmptyBookmarksScreenPreview() {
                     selectedItems = listOf(),
                     rootMenuShown = false,
                     showBookmarksImport = true,
+                    showBookmarksImportFromGoogle = true,
                     sortMenuShown = false,
                     sortOrder = BookmarksListSortOrder.default,
                     recursiveSelectedCount = null,

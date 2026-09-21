@@ -1949,6 +1949,8 @@
     <string name="bookmark_sort_menu_z_to_a">Sort by Z to A</string>
     <!-- Label for button to import bookmarks from file. -->
     <string name="bookmark_import_menu_button">Import from file</string>
+    <!-- Label for button to import bookmarks from Google. -->
+    <string name="bookmark_import_from_google_menu_button">Import from Google</string>
     <!-- Snackbar message shown when a bookmark import attempt fails. -->
     <string name="bookmark_import_failure_snackbar">Couldn’t import bookmarks. Try again.</string>
     <!-- Default name for the folder created when importing bookmarks from a file. -->

@@ -96,6 +96,8 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                 fragmentStore(
                     BookmarksState.default.copy(
                         showBookmarksImport = requireComponents.settings.importBookmarksFeatureFlagEnabled,
+                        showBookmarksImportFromGoogle =
+                            requireComponents.settings.importBookmarksFromGoogleFeatureFlagEnabled,
                         sortOrder =
                             BookmarksListSortOrder.fromString(
                                 value = requireComponents.settings.bookmarkListSortOrder,
@@ -150,6 +152,12 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                                 childFragmentManager,
                                                 ImportBookmarksDialogFragment.TAG,
                                             )
+                                    },
+                                    navigateToImportFromGoogleScreen = {
+                                        navController.navigate(
+                                            BookmarkFragmentDirections
+                                                .actionBookmarkFragmentToImportFromGoogleFragment()
+                                        )
                                     },
                                     shareBookmarks = { bookmarks ->
                                         val shareItems =
