@@ -414,6 +414,8 @@
     <string name="preferences_import_bookmarks">Import Bookmarks</string>
     <!-- Label for the secret settings preference to enable Import Bookmarks -->
     <string name="preferences_debug_settings_import_bookmarks">Enable Import Bookmarks</string>
+    <!-- Label for the secret settings preference to enable Import Bookmarks from Google -->
+    <string name="preferences_debug_settings_import_bookmarks_from_google">Enable Import Bookmarks from Google</string>
 
     <!-- Debug info -->
     <!-- The title of the Debug info bottom sheet. -->

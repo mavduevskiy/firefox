@@ -23,6 +23,7 @@
     <string name="pref_key_import_bookmarks" translatable="false">pref_key_import_bookmarks</string>
     <string name="pref_key_enable_ai_controls" translatable="false">pref_key_enable_ai_controls</string>
     <string name="pref_key_enable_import_bookmarks" translatable="false">pref_key_enable_import_bookmarks</string>
+    <string name="pref_key_enable_import_bookmarks_from_google" translatable="false">pref_key_enable_import_bookmarks_from_google</string>
     <string name="pref_key_enable_ip_protection" translatable="false">pref_key_enable_ip_protection</string>
     <string name="pref_key_ip_protection_use_gpi" translatable="false">pref_key_ip_protection_use_gpi</string>
     <string name="pref_key_has_used_ip_protection" translatable="false">pref_key_has_used_vpn</string>
