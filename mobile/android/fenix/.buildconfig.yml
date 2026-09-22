@@ -16,6 +16,7 @@ projects:
     - components:browser-toolbar
     - components:compose-awesomebar
     - components:compose-base
+    - components:compose-engine
     - components:compose-browser-toolbar
     - components:compose-cfr
     - components:compose-menu

@@ -447,6 +447,7 @@ dependencies {
     implementation project(':components:browser-engine-gecko')
     implementation project(':components:compose-awesomebar')
     implementation project(':components:compose-base')
+    implementation project(':components:compose-engine')
     implementation project(':components:compose-browser-toolbar')
     implementation project(':components:compose-cfr')
     implementation project(':components:compose-menu')
