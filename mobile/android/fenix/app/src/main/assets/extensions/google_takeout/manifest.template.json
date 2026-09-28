@@ -1,0 +1,33 @@
+{
+  "manifest_version": 2,
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "takeout-importer@mozac.org"
+    }
+  },
+  "name": "Mozilla Android Components - Takeout Importer",
+  "version": "${version}",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://takeout.google.com/*",
+        "https://accounts.google.com/*"
+      ],
+      "js": ["takeout-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": ["takeout-background.js"],
+    "persistent": false
+  },
+  "permissions": [
+    "mozillaAddons",
+    "geckoViewAddons",
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "tabs",
+    "https://takeout.google.com/*",
+    "https://accounts.google.com/*"
+  ]
+}

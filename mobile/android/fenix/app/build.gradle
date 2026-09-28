@@ -3,6 +3,7 @@ import com.android.build.api.variant.FilterConfiguration
 import java.time.format.DateTimeFormatter
 
 import static org.mozilla.conventions.BuildConfigKt.getBuildId
+import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
 plugins {
     id 'com.android.application'
@@ -771,6 +772,10 @@ ${f.text}"""
     }
 }
 
+tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
+    updateExtensionVersion(task, 'src/main/assets/extensions/google_takeout', rootProject.ext.config.componentsVersion)
+}
+
 def getSupportedLocales() {
     // This isn't running as a task, instead the array is build when the gradle file is parsed.
     // https://github.com/mozilla-mobile/fenix/issues/14175
@@ -810,3 +815,5 @@ dependencies {
     detektPlugins project(":components:tooling-detekt")
     detektPlugins project(":mozilla-detekt-rules")
 }
+
+preBuild.dependsOn updateBuiltInExtensionVersion
