@@ -21,6 +21,10 @@ features:
         description: Hosts that mean the user has to authenticate before the journey can continue.
         type: List<String>
         default: ["accounts.google.com"]
+      download-hosts:
+        description: Hosts the export archive is downloaded from.
+        type: List<String>
+        default: ["takeout.google.com", "takeout-download.usercontent.google.com"]
       path-prefix-pattern:
         description: >
           Regular expression for a path prefix removed before matching journey

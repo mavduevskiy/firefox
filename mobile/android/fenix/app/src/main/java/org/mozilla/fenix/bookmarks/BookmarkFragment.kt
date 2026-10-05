@@ -19,6 +19,8 @@ import androidx.navigation.NavDirections
 import androidx.navigation.NavHostController
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
@@ -236,6 +238,21 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
         ) { _, bundle ->
             ImportBookmarksDialogFragment.decodeResult(bundle)?.let {
                 importResultFlow.tryEmit(it)
+            }
+        }
+
+        // The Google import is a sibling destination, so its result arrives
+        // through the parent fragment manager, while this screen is being
+        // recreated: wait for the middleware to subscribe before emitting.
+        parentFragmentManager.setFragmentResultListener(
+            ImportFromGoogleFragment.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            ImportBookmarksDialogFragment.decodeResult(bundle)?.let { event ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    importResultFlow.subscriptionCount.first { it > 0 }
+                    importResultFlow.emit(event)
+                }
             }
         }
     }

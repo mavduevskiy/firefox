@@ -10,16 +10,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
-import mozilla.appservices.places.BookmarkRoot
-import mozilla.components.concept.bookmark.parser.BookmarksFileParser
-import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 import mozilla.components.feature.importer.BookmarkImporter
 import mozilla.components.feature.importer.ImporterEvent
-import mozilla.components.lib.bookmark.parser.jsoup.jsoupParser
-import mozilla.components.lib.bookmarks.file.htmlImporter
-import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.bookmarks.importer.FenixImporterEvent
+import org.mozilla.fenix.bookmarks.importer.fenixHtmlBookmarksImporter
 import org.mozilla.fenix.bookmarks.importer.toFenixError
 import org.mozilla.fenix.ext.requireComponents
 
@@ -31,14 +26,8 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
     ): View = content {
         BookmarkImporter(
             importer =
-                BookmarksFileImporter.htmlImporter(
+                fenixHtmlBookmarksImporter(
                     context = requireContext(),
-                    parentGuid = BookmarkRoot.Mobile.id,
-                    parser =
-                        BookmarksFileParser.jsoupParser(
-                            rootFolderName =
-                                requireContext().getString(R.string.bookmark_import_destination_default_name)
-                        ),
                     inserter = requireComponents.core.bookmarksStorage,
                 ),
             onEventReceived = { event ->
@@ -80,6 +69,23 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
 
                 RESULT_CANCELLED -> FenixImporterEvent.Canceled
                 else -> null
+            }
+
+        /** Encodes [event] in the bundle format read by [decodeResult]. */
+        fun encodeResult(event: FenixImporterEvent): Bundle =
+            Bundle().apply {
+                when (event) {
+                    is FenixImporterEvent.Started -> putString(KEY_RESULT, RESULT_STARTED)
+                    is FenixImporterEvent.Success -> {
+                        putString(KEY_RESULT, RESULT_SUCCESS)
+                        putInt(KEY_SUCCESS_IMPORT_COUNT, event.importCount)
+                    }
+                    is FenixImporterEvent.Failure -> {
+                        putString(KEY_RESULT, RESULT_FAILURE)
+                        putInt(KEY_ERROR_TYPE, event.error.ordinal)
+                    }
+                    is FenixImporterEvent.Canceled -> putString(KEY_RESULT, RESULT_CANCELLED)
+                }
             }
     }
 }
