@@ -275,5 +275,10 @@
     }
   }
 
-  runBookmarkExportJourney();
+  const port = browser.runtime.connectNative("mozacTakeoutImporter");
+  port.onMessage.addListener(message => {
+    if (message?.type === "start") {
+      runBookmarkExportJourney();
+    }
+  });
 })();

@@ -10,11 +10,23 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.helper.Target
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.compose.engine.WebContent
+import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.webextension.MessageHandler
+import mozilla.components.concept.engine.webextension.Port
+import mozilla.components.lib.state.ext.consumeFlow
+import mozilla.components.lib.state.ext.flow
+import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
+import org.json.JSONObject
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -28,6 +40,7 @@ private const val DEFAULT_PORT: String = "mozacTakeoutImporter"
 /** The screen to guide the user through importing data from Google. */
 class ImportFromGoogleFragment : Fragment() {
     private lateinit var tabId: String
+    private var engineSession: EngineSession? = null
     private val extensionController = BuiltInWebExtensionController(
         EXTENSION_ID,
         EXTENSION_URL,
@@ -69,6 +82,33 @@ class ImportFromGoogleFragment : Fragment() {
                 println("$this, install onError, error = $error")
             },
         )
+
+        // Here we are looking for the created "hidden" tab to send it a "start" message.
+        // Without this mechanism, the runner would execute on any takeout pages opened by the user as well.
+        lifecycleScope.launch {
+            requireComponents.core.store.flow()
+                .mapNotNull { it.findTab(tabId)?.engineState?.engineSession }
+                .first()
+                .also { session ->
+                    engineSession = session
+                    extensionController.registerContentMessageHandler(
+                        session,
+                        object : MessageHandler {
+                            override fun onPortConnected(port: Port) {
+                                port.postMessage(JSONObject().put("type", "start"))
+                            }
+                        },
+                    )
+                }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        extensionController.disconnectPort(engineSession)
+        extensionController.uninstall(requireComponents.core.engine)
+        requireComponents.useCases.tabsUseCases.removeTab(tabId)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
