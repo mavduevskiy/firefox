@@ -21,18 +21,18 @@ import mozilla.components.compose.engine.WebContent
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
-import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.flow
-import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
 import org.json.JSONObject
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.theme.FirefoxTheme
+import java.util.UUID
 
 private const val GOOGLE_AUTH_URL = "https://accounts.google.com/"
-private const val GOOGLE_TAKEOUT_URL = "https://takeout.google.com/"
 private const val EXTENSION_ID: String = "takeout-importer@mozac.org"
 private const val EXTENSION_URL: String = "resource://android/assets/extensions/google_takeout/"
 private const val DEFAULT_PORT: String = "mozacTakeoutImporter"
@@ -40,6 +40,8 @@ private const val DEFAULT_PORT: String = "mozacTakeoutImporter"
 /** The screen to guide the user through importing data from Google. */
 class ImportFromGoogleFragment : Fragment() {
     private lateinit var tabId: String
+    private val attemptId = UUID.randomUUID().toString()
+    private val logger = Logger("ImportFromGoogleFragment")
     private var engineSession: EngineSession? = null
     private val extensionController = BuiltInWebExtensionController(
         EXTENSION_ID,
@@ -73,6 +75,23 @@ class ImportFromGoogleFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // The journey the extension runs comes from Nimbus. The background
+        // script connects at startup and receives it with this attempt's id.
+        extensionController.registerBackgroundMessageHandler(
+            object : MessageHandler {
+                override fun onPortConnected(port: Port) {
+                    val feature = FxNimbus.features.googleTakeoutImport
+                    feature.recordExposure()
+                    port.postMessage(
+                        JSONObject()
+                            .put("type", "configure")
+                            .put("attemptId", attemptId)
+                            .put("config", feature.value().toJSONObject()),
+                    )
+                }
+            },
+        )
+
         extensionController.install(
             runtime = requireComponents.core.engine,
             onSuccess = {
@@ -95,7 +114,15 @@ class ImportFromGoogleFragment : Fragment() {
                         session,
                         object : MessageHandler {
                             override fun onPortConnected(port: Port) {
-                                port.postMessage(JSONObject().put("type", "start"))
+                                port.postMessage(
+                                    JSONObject()
+                                        .put("type", "start")
+                                        .put("attemptId", attemptId),
+                                )
+                            }
+
+                            override fun onPortMessage(message: Any, port: Port) {
+                                logger.info("runner: $message")
                             }
                         },
                     )
@@ -116,7 +143,7 @@ class ImportFromGoogleFragment : Fragment() {
 
         tabId =
             requireComponents.useCases.tabsUseCases.addTab.invoke(
-                url = GOOGLE_TAKEOUT_URL,
+                url = FxNimbus.features.googleTakeoutImport.value().launchUrl,
                 selectTab = false,
             )
     }

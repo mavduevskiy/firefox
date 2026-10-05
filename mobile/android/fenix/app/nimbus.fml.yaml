@@ -12,6 +12,8 @@ channels:
 includes:
   - onboarding.fml.yaml
   - messaging-fenix.fml.yaml
+  - web-flow.fml.yaml
+  - google-takeout-import.fml.yaml
 import:
   - path: ../../android-components/components/browser/engine-gecko/geckoview.fml.yaml
     channel: release

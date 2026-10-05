@@ -19,7 +19,7 @@
   ],
   "background": {
     "scripts": ["takeout-background.js"],
-    "persistent": false
+    "persistent": true
   },
   "permissions": [
     "mozillaAddons",
