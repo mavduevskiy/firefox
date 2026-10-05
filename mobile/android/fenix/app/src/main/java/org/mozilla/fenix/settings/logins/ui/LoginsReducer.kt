@@ -62,7 +62,8 @@ internal fun loginsReducer(state: LoginsState, action: LoginsAction) =
         LearnMoreAboutSync -> state
         is ImportPasswordsOverflowMenuClicked -> state.copy(importPasswordsMenuShown = true)
         is ImportPasswordsOverflowMenuDismissed -> state.copy(importPasswordsMenuShown = false)
-        is ImportFileClicked -> state.copy(importPasswordsMenuShown = false)
+        is ImportFileClicked,
+        is ImportFromGoogleClicked -> state.copy(importPasswordsMenuShown = false)
     }
 
 private fun LoginsState.withDeletedLoginRemoved(): LoginsState =

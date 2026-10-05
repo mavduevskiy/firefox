@@ -14,6 +14,7 @@ includes:
   - messaging-fenix.fml.yaml
   - web-flow.fml.yaml
   - google-takeout-import.fml.yaml
+  - google-passwords-import.fml.yaml
 import:
   - path: ../../android-components/components/browser/engine-gecko/geckoview.fml.yaml
     channel: release

@@ -3,15 +3,15 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * Journey controller for the Google Takeout import. This is the
- * site-specific half of the extension: the runner content script is generic
- * and only executes the actions this controller hands out.
+ * Journey controller for web flows such as the Google Takeout bookmarks
+ * import. The journey itself is data sent by the app; the runner content
+ * script is generic and only executes the actions this controller hands out.
  *
  * The runner announces every page it is injected into; the controller maps
  * the page URL to a journey page and replies with the resolved actions. The
  * URL is the state. The only per-attempt memory is which `once` pages were
- * already handed out, so pages that reload themselves (the archive page
- * reloads after the download click) do not loop.
+ * already handed out, so pages that reload themselves (the Takeout archive
+ * page reloads after the download click) do not loop.
  *
  * That memory lives in this page, which is why the manifest declares the
  * background as persistent: an event page could be unloaded mid-attempt and
@@ -22,7 +22,7 @@
  * belongs to. Keys arrive in the Nimbus kebab-case form.
  */
 
-const PORT_NAME = "mozacTakeoutImporter";
+const PORT_NAME = "mozacWebFlowRunner";
 const CONFIGURE_TIMEOUT_MS = 10000;
 const ACTION_TYPES = new Set(["click", "scroll", "expect", "extract", "navigate"]);
 const EXPECTATION_TYPES = new Set(["element", "gone", "url"]);
@@ -145,6 +145,9 @@ function compileConfig(rawConfig) {
       return {
         id: page.id,
         once: !!page.once,
+        // Defaults to true: a page interrupted by an auth interstitial
+        // usually did not get its effect and has to run again.
+        retryAfterAuth: page.retryAfterAuth ?? true,
         path: compileRegExp(page.pathPattern, `${page.id}/pathPattern`),
         actions: page.actions.map(a =>
           compileAction(a, selectors, defaults, page.id)
@@ -167,7 +170,7 @@ function onConfigure({ attemptId, config }) {
     config: compiled,
     error,
     tabId: null,
-    handedOutOnce: new Set(),
+    handedOutOnce: new Map(),
   };
   // Waiters remove themselves once their attempt is configured.
   [...attemptWaiters].forEach(waiter => waiter());
@@ -220,10 +223,14 @@ async function onReady({ attemptId, url }, sender) {
   const { config } = attempt;
   const { hostname, pathname } = new URL(url);
   if (config.authHosts.has(hostname)) {
-    // An auth interstitial interrupted the journey: the page that led here
-    // did not get its effect, so it has to be able to run again once the
-    // user is back.
-    attempt.handedOutOnce.clear();
+    // An auth interstitial interrupted the journey: unless the page says
+    // otherwise, the page that led here did not get its effect and has to
+    // be able to run again once the user is back.
+    for (const [key, page] of attempt.handedOutOnce) {
+      if (page.retryAfterAuth) {
+        attempt.handedOutOnce.delete(key);
+      }
+    }
     return { type: "idle", reason: "auth-required" };
   }
   if (!config.hosts.has(hostname)) {
@@ -244,7 +251,7 @@ async function onReady({ attemptId, url }, sender) {
     }
     // Recorded before the actions run so a self-reloading page cannot
     // request them again; released by onFailed so a failed run can retry.
-    attempt.handedOutOnce.add(onceKey);
+    attempt.handedOutOnce.set(onceKey, page);
   }
 
   return {

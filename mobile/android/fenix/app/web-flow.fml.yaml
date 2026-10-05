@@ -23,6 +23,14 @@ objects:
           If true, the actions run at most once per attempt for a given path.
           Used for pages that reload themselves after an action.
         default: false
+      retry-after-auth:
+        type: Boolean
+        description: >
+          For `once` pages: if true, the page may run again after the user
+          went through an auth page, because the interrupted actions did not
+          take effect. Set to false when the site continues on its own after
+          authentication.
+        default: true
       actions:
         type: List<WebFlowAction>
         description: The actions to run, in order.

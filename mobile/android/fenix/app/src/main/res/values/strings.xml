@@ -2788,6 +2788,17 @@
     <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Sort passwords menu</string>
     <!-- Label for button to import passwords from file. -->
     <string name="passwords_import_menu_button">Import from file</string>
+    <!-- Content description of the button that opens the menu with the ways to import passwords. -->
+    <string name="passwords_import_overflow_menu_content_description">Import passwords</string>
+    <!-- Label for button to import passwords from Google. -->
+    <string name="passwords_import_from_google_menu_button">Import from Google</string>
+    <!-- Message shown when importing passwords from Google succeeded. %d is the number of imported passwords. -->
+    <plurals name="passwords_import_from_google_success">
+        <item quantity="one">Imported %d password from Google</item>
+        <item quantity="other">Imported %d passwords from Google</item>
+    </plurals>
+    <!-- Message shown when importing passwords from Google failed. -->
+    <string name="passwords_import_from_google_failure">Couldn’t import passwords from Google. Try again.</string>
 
     <!-- Email Masks -->
     <!-- Title for the Email Masks in the settings menu -->

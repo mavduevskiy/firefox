@@ -9,7 +9,7 @@
  * each result back to the app.
  */
 (() => {
-  const PORT_NAME = "mozacTakeoutImporter";
+  const PORT_NAME = "mozacWebFlowRunner";
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

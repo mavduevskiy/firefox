@@ -14,6 +14,7 @@ import mozilla.components.lib.state.State
  * @property sortOrder The order to display the login items.
  * @property importPasswordsMenuShown Whether the import passwords menu is shown.
  * @property showPasswordsImport Whether the import passwords UI should be shown.
+ * @property showPasswordsImportFromGoogle Whether the import passwords from Google UI should be shown.
  * @property loginsListState State representing the list login subscreen, if visible.
  * @property loginsAddLoginState State representing the add login subscreen, if visible.
  * @property loginsEditLoginState State representing the edit login subscreen, if visible.
@@ -28,6 +29,7 @@ internal data class LoginsState(
     val sortOrder: LoginsSortOrder,
     val importPasswordsMenuShown: Boolean,
     val showPasswordsImport: Boolean,
+    val showPasswordsImportFromGoogle: Boolean,
     val loginsListState: LoginsListState?,
     val loginsAddLoginState: LoginsAddLoginState?,
     val loginsEditLoginState: LoginsEditLoginState?,
@@ -44,6 +46,7 @@ internal data class LoginsState(
                 sortOrder = LoginsSortOrder.default,
                 importPasswordsMenuShown = false,
                 showPasswordsImport = true,
+                showPasswordsImportFromGoogle = false,
                 loginsListState = null,
                 loginsAddLoginState = null,
                 loginsEditLoginState = null,

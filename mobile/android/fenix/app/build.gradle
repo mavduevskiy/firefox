@@ -773,7 +773,7 @@ ${f.text}"""
 }
 
 tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
-    updateExtensionVersion(task, 'src/main/assets/extensions/google_takeout', rootProject.ext.config.componentsVersion)
+    updateExtensionVersion(task, 'src/main/assets/extensions/web_flow_runner', rootProject.ext.config.componentsVersion)
 }
 
 def getSupportedLocales() {

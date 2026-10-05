@@ -28,6 +28,7 @@ import org.mozilla.fenix.settings.SupportUtils
  * @param exitLogins Invoked when back is clicked while the navController's backstack is empty.
  * @param persistLoginsSortOrder Invoked to persist the new sorting order for logins.
  * @param navigateToImportDialog Invoked to navigate to the import passwords dialog.
+ * @param navigateToImportFromGoogleScreen Invoked to navigate to the import passwords from Google screen.
  * @param openTab Invoked when opening a tab when a login url is clicked.
  * @param ioDispatcher Coroutine dispatcher for IO operations.
  * @param clipboardManager For copying logins URLs.
@@ -39,6 +40,7 @@ internal class LoginsMiddleware(
     private val exitLogins: () -> Unit,
     private val persistLoginsSortOrder: suspend (LoginsSortOrder) -> Unit,
     private val navigateToImportDialog: () -> Unit,
+    private val navigateToImportFromGoogleScreen: () -> Unit = {},
     private val openTab: (url: String, openInNewTab: Boolean) -> Unit,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val clipboardManager: ClipboardManager?,
@@ -123,6 +125,9 @@ internal class LoginsMiddleware(
             }
             is ImportFileClicked -> {
                 navigateToImportDialog()
+            }
+            is ImportFromGoogleClicked -> {
+                navigateToImportFromGoogleScreen()
             }
             is LoginsLoaded,
             is EditLoginAction.UsernameChanged,

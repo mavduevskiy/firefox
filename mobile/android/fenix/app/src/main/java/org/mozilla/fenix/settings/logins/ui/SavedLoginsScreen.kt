@@ -329,11 +329,11 @@ private fun LoginsListTopBar(
                 )
             }
 
-            if (store.state.showPasswordsImport) {
+            if (store.state.showPasswordsImport || store.state.showPasswordsImportFromGoogle) {
                 Box {
                     IconButton(
                         onClick = { store.dispatch(ImportPasswordsOverflowMenuClicked) },
-                        contentDescription = stringResource(R.string.passwords_import_menu_button),
+                        contentDescription = stringResource(R.string.passwords_import_overflow_menu_content_description),
                     ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
@@ -442,13 +442,24 @@ private fun ImportPasswordsOverflowMenu(store: LoginsStore) {
     }
         .collectAsState(initial = store.state.importPasswordsMenuShown)
 
-    val menuItems =
-        listOf(
-            MenuItem.TextItem(
-                text = Text.Resource(R.string.passwords_import_menu_button),
-                onClick = { store.dispatch(ImportFileClicked) },
+    val menuItems = buildList {
+        if (store.state.showPasswordsImport) {
+            add(
+                MenuItem.TextItem(
+                    text = Text.Resource(R.string.passwords_import_menu_button),
+                    onClick = { store.dispatch(ImportFileClicked) },
+                ),
             )
-        )
+        }
+        if (store.state.showPasswordsImportFromGoogle) {
+            add(
+                MenuItem.TextItem(
+                    text = Text.Resource(R.string.passwords_import_from_google_menu_button),
+                    onClick = { store.dispatch(ImportFromGoogleClicked) },
+                ),
+            )
+        }
+    }
 
     DropdownMenu(
         menuItems = menuItems,

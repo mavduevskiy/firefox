@@ -14,26 +14,18 @@ import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.helper.Target
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.compose.engine.WebContent
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
-import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.webextension.MessageHandler
-import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
-import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DefaultDownloadFileUtils
-import mozilla.components.support.webextensions.BuiltInWebExtensionController
-import org.json.JSONObject
 import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.bookmarks.importer.FenixImporterEvent
 import org.mozilla.fenix.bookmarks.importer.fenixHtmlBookmarksImporter
@@ -46,30 +38,20 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.webflow.WebFlowRunner
 import java.io.File
-import java.util.UUID
 
 private const val GOOGLE_AUTH_URL = "https://accounts.google.com/"
-private const val EXTENSION_ID: String = "takeout-importer@mozac.org"
-private const val EXTENSION_URL: String = "resource://android/assets/extensions/google_takeout/"
-private const val DEFAULT_PORT: String = "mozacTakeoutImporter"
 
 /** The screen to guide the user through importing data from Google. */
 class ImportFromGoogleFragment : Fragment() {
-    private lateinit var tabId: String
-    private val attemptId = UUID.randomUUID().toString()
+    private lateinit var runner: WebFlowRunner
+    private val tabId get() = runner.tabId
     private val logger = Logger("ImportFromGoogleFragment")
-    private val startedAt = System.currentTimeMillis()
     private var importStarted = false
     private val extractDirectory by lazy { File(requireContext().cacheDir, EXTRACT_DIRECTORY) }
-    private var engineSession: EngineSession? = null
     private val downloadsFeature = ViewBoundFeatureWrapper<DownloadsFeature>()
     private val takeoutDownloadFeature = ViewBoundFeatureWrapper<TakeoutDownloadFeature>()
-    private val extensionController = BuiltInWebExtensionController(
-        EXTENSION_ID,
-        EXTENSION_URL,
-        DEFAULT_PORT,
-    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -98,60 +80,7 @@ class ImportFromGoogleFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setUpDownloads(view)
-
-        // The journey the extension runs comes from Nimbus. The background
-        // script connects at startup and receives it with this attempt's id.
-        extensionController.registerBackgroundMessageHandler(
-            object : MessageHandler {
-                override fun onPortConnected(port: Port) {
-                    val feature = FxNimbus.features.googleTakeoutImport
-                    feature.recordExposure()
-                    port.postMessage(
-                        JSONObject()
-                            .put("type", "configure")
-                            .put("attemptId", attemptId)
-                            .put("config", feature.value().toJSONObject()),
-                    )
-                }
-            },
-        )
-
-        extensionController.install(
-            runtime = requireComponents.core.engine,
-            onSuccess = {
-                println("$this, install onSuccess")
-            },
-            onError = { error ->
-                println("$this, install onError, error = $error")
-            },
-        )
-
-        // Here we are looking for the created "hidden" tab to send it a "start" message.
-        // Without this mechanism, the runner would execute on any takeout pages opened by the user as well.
-        lifecycleScope.launch {
-            requireComponents.core.store.flow()
-                .mapNotNull { it.findTab(tabId)?.engineState?.engineSession }
-                .first()
-                .also { session ->
-                    engineSession = session
-                    extensionController.registerContentMessageHandler(
-                        session,
-                        object : MessageHandler {
-                            override fun onPortConnected(port: Port) {
-                                port.postMessage(
-                                    JSONObject()
-                                        .put("type", "start")
-                                        .put("attemptId", attemptId),
-                                )
-                            }
-
-                            override fun onPortMessage(message: Any, port: Port) {
-                                logger.info("runner: $message")
-                            }
-                        },
-                    )
-                }
-        }
+        runner.start(lifecycleScope)
     }
 
     /**
@@ -195,7 +124,7 @@ class ImportFromGoogleFragment : Fragment() {
                 context = context,
                 store = components.core.store,
                 hosts = FxNimbus.features.googleTakeoutImport.value().downloadHosts.toSet(),
-                startedAt = startedAt,
+                startedAt = runner.startedAt,
                 extractDirectory = extractDirectory,
                 onExtracted = ::importBookmarks,
                 onFailed = { throwable ->
@@ -268,20 +197,23 @@ class ImportFromGoogleFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        extensionController.disconnectPort(engineSession)
-        extensionController.uninstall(requireComponents.core.engine)
-        requireComponents.useCases.tabsUseCases.removeTab(tabId)
+        runner.release()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        tabId =
-            requireComponents.useCases.tabsUseCases.addTab.invoke(
-                url = FxNimbus.features.googleTakeoutImport.value().launchUrl,
-                selectTab = false,
-            )
+        // The journey the extension runs comes from Nimbus.
+        val feature = FxNimbus.features.googleTakeoutImport
+        runner = WebFlowRunner(
+            engine = requireComponents.core.engine,
+            store = requireComponents.core.store,
+            tabsUseCases = requireComponents.useCases.tabsUseCases,
+            launchUrl = feature.value().launchUrl,
+            config = { feature.value().toJSONObject() },
+            onConfigured = { feature.recordExposure() },
+        )
+        runner.createTab()
     }
 
     companion object {

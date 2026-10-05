@@ -1659,7 +1659,13 @@
                 app:destination="@id/browserFragment"
                 app:popUpTo="@id/settingsFragment"
                 app:popUpToInclusive="true" />
+            <action
+                android:id="@+id/action_savedLoginsFragment_to_importPasswordsFromGoogleFragment"
+                app:destination="@id/importPasswordsFromGoogleFragment" />
         </fragment>
+        <fragment
+            android:id="@+id/importPasswordsFromGoogleFragment"
+            android:name="org.mozilla.fenix.settings.logins.fragment.ImportPasswordsFromGoogleFragment" />
     </navigation>
 
     <dialog

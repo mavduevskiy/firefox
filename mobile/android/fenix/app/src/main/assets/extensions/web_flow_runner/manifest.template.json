@@ -2,23 +2,24 @@
   "manifest_version": 2,
   "browser_specific_settings": {
     "gecko": {
-      "id": "takeout-importer@mozac.org"
+      "id": "web-flow-runner@mozilla.org"
     }
   },
-  "name": "Mozilla Android Components - Takeout Importer",
+  "name": "Firefox - Web Flow Runner",
   "version": "${version}",
   "content_scripts": [
     {
       "matches": [
         "https://takeout.google.com/*",
+        "https://passwords.google.com/*",
         "https://accounts.google.com/*"
       ],
-      "js": ["takeout-content.js"],
+      "js": ["web-flow-content.js"],
       "run_at": "document_idle"
     }
   ],
   "background": {
-    "scripts": ["takeout-background.js"],
+    "scripts": ["web-flow-background.js"],
     "persistent": true
   },
   "permissions": [
@@ -28,6 +29,7 @@
     "nativeMessagingFromContent",
     "tabs",
     "https://takeout.google.com/*",
+    "https://passwords.google.com/*",
     "https://accounts.google.com/*"
   ]
 }
