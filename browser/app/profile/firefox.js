@@ -1291,6 +1291,10 @@ pref("browser.bookmarks.max_backups",             15);
 // Whether menu should close after Ctrl-click, middle-click, etc.
 pref("browser.bookmarks.openInTabClosesMenu", true);
 
+// Whether the prototype Google Takeout bookmarks import can be started from
+// the Browser Console with TakeoutBookmarksImport.run().
+pref("browser.webflow.takeoutImport.enabled", false);
+
 // Where new bookmarks go by default.
 // Use PlacesUIUtils.defaultParentGuid to read this; do NOT read the pref
 // directly.

@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Web flow test: done</title></head>
+<body>
+  <button id="done">Done</button>
+  <script>
+    document.getElementById("done").addEventListener("click", () => {
+      document.body.dataset.clicked = new URLSearchParams(location.search).get("id");
+    });
+  </script>
+</body>
+</html>

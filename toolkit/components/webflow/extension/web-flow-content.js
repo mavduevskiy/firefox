@@ -3,10 +3,14 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * Generic action runner. Has no knowledge of the site it runs on: once the
- * app sends "start" over the native port, it asks the background controller
- * for the actions of the current page, executes them in order, and reports
- * each result back to the app.
+ * Generic action runner. Has no knowledge of the site it runs on: once it
+ * is told to start, it asks the background controller for the actions of
+ * the current page, executes them in order, and reports each result back
+ * through the controller to the host.
+ *
+ * Only the tab of the attempt is started: on desktop the controller decides
+ * this when the runner says hello; on Android the app sends "start" over a
+ * native port it only listens to for its hidden tab.
  */
 (() => {
   const PORT_NAME = "mozacWebFlowRunner";
@@ -109,10 +113,8 @@
     }
   }
 
-  const port = browser.runtime.connectNative(PORT_NAME);
-
   function report(attemptId, actionId, status, detail) {
-    port.postMessage({
+    browser.runtime.sendMessage({
       type: "result",
       attemptId,
       actionId,
@@ -148,12 +150,11 @@
 
   let started = false;
 
-  port.onMessage.addListener(async message => {
-    if (message?.type !== "start" || started) {
+  async function start(attemptId) {
+    if (started) {
       return;
     }
     started = true;
-    const { attemptId } = message;
     let plan;
     try {
       plan = await browser.runtime.sendMessage({
@@ -174,6 +175,21 @@
         break;
       default:
         report(attemptId, "plan-request", "error", plan?.reason);
+    }
+  }
+
+  browser.runtime.sendMessage({ type: "hello" }).then(reply => {
+    switch (reply?.type) {
+      case "start":
+        start(reply.attemptId);
+        break;
+      case "use-native-port":
+        browser.runtime.connectNative(PORT_NAME).onMessage.addListener(message => {
+          if (message?.type === "start") {
+            start(message.attemptId);
+          }
+        });
+        break;
     }
   });
 })();

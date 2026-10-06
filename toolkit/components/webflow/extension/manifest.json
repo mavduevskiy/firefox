@@ -1,12 +1,13 @@
 {
   "manifest_version": 2,
+  "name": "Web Flow Runner",
+  "description": "Drives multi-page web flows, such as data exports, in a tab on behalf of the browser.",
+  "version": "1.0.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "web-flow-runner@mozilla.org"
     }
   },
-  "name": "Firefox - Web Flow Runner",
-  "version": "${version}",
   "content_scripts": [
     {
       "matches": [
@@ -21,6 +22,16 @@
   "background": {
     "scripts": ["web-flow-background.js"],
     "persistent": true
+  },
+  "experiment_apis": {
+    "webFlow": {
+      "schema": "experiment-apis/webFlow.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "experiment-apis/webFlow.js",
+        "paths": [["webFlow"]]
+      }
+    }
   },
   "permissions": [
     "mozillaAddons",

@@ -1,0 +1,47 @@
+[
+  {
+    "namespace": "webFlow",
+    "description": "Connects the web flow runner to its desktop host, WebFlow.sys.mjs. Android uses native messaging instead.",
+    "events": [
+      {
+        "name": "onConfigure",
+        "type": "function",
+        "description": "Fired when the host starts an attempt.",
+        "parameters": [
+          {
+            "name": "attempt",
+            "type": "object",
+            "description": "The attempt id, the tab the journey runs in and the journey config.",
+            "properties": {
+              "attemptId": { "type": "string" },
+              "tabId": { "type": "integer" },
+              "config": { "type": "object", "additionalProperties": { "type": "any" } }
+            }
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "getAttempt",
+        "type": "function",
+        "description": "Returns the attempt in progress, or null.",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "report",
+        "type": "function",
+        "description": "Sends a message from the runner to the host.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "message",
+            "type": "object",
+            "additionalProperties": { "type": "any" }
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,9 +1,9 @@
 import com.android.build.api.variant.FilterConfiguration
 
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 import static org.mozilla.conventions.BuildConfigKt.getBuildId
-import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
 plugins {
     id 'com.android.application'
@@ -772,8 +772,37 @@ ${f.text}"""
     }
 }
 
-tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
-    updateExtensionVersion(task, 'src/main/assets/extensions/web_flow_runner', rootProject.ext.config.componentsVersion)
+// The web flow runner extension is shared with desktop and lives in `toolkit/components/webflow/`.
+// It is copied into a generated assets directory registered via the variant Sources API; the
+// `extensions/web_flow_runner/` subpath keeps it at `resource://android/assets/extensions/web_flow_runner/`.
+abstract class SyncWebFlowRunnerExtension extends DefaultTask {
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getExtensionDir()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract FileSystemOperations getFs()
+
+    @TaskAction
+    void sync() {
+        fs.sync { spec ->
+            spec.from(extensionDir)
+            spec.into(outputDir.get().dir("extensions/web_flow_runner"))
+        }
+    }
+}
+
+def syncWebFlowRunnerExtension = tasks.register("syncWebFlowRunnerExtension", SyncWebFlowRunnerExtension) {
+    extensionDir.set(new File("${gradle.mozconfig.topsrcdir}/toolkit/components/webflow/extension"))
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets.addGeneratedSourceDirectory(syncWebFlowRunnerExtension) { it.outputDir }
+    }
 }
 
 def getSupportedLocales() {
@@ -815,5 +844,3 @@ dependencies {
     detektPlugins project(":components:tooling-detekt")
     detektPlugins project(":mozilla-detekt-rules")
 }
-
-preBuild.dependsOn updateBuiltInExtensionVersion

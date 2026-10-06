@@ -6352,3 +6352,22 @@ nova:
         branch: default
         pref: browser.nova.enabled
       description: Whether Nova is enabled.
+
+webFlowTakeoutImport:
+  description: >-
+    Prototype of the Google Takeout bookmarks import driven by the web flow
+    runner, the journey runner shared with Firefox for Android.
+  owner: mavduevskiy@mozilla.com
+  hasExposure: true
+  exposureDescription: The import was started.
+  variables:
+    enabled:
+      type: boolean
+      fallbackPref: browser.webflow.takeoutImport.enabled
+      description: Whether the import can be started.
+    config:
+      type: json
+      description: >-
+        The journey config, in the same form as the Firefox for Android
+        `google-takeout-import` feature. When unset, the default shipped in
+        toolkit/components/webflow/journeys/google-takeout-bookmarks.json is used.

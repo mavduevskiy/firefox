@@ -17,9 +17,11 @@
  * background as persistent: an event page could be unloaded mid-attempt and
  * lose it.
  *
- * The journey config comes from the app (a Nimbus feature) in a `configure`
- * message over the native port, together with the id of the attempt it
- * belongs to. Keys arrive in the Nimbus kebab-case form.
+ * The journey config comes from the host in a `configure` message, together
+ * with the id of the attempt it belongs to: from the app (a Nimbus feature)
+ * over native messaging on Android, and from WebFlow.sys.mjs through the
+ * webFlow experiment API on desktop. Keys arrive in the Nimbus kebab-case
+ * form.
  */
 
 const PORT_NAME = "mozacWebFlowRunner";
@@ -157,7 +159,7 @@ function compileConfig(rawConfig) {
   };
 }
 
-function onConfigure({ attemptId, config }) {
+function onConfigure({ attemptId, tabId, config }) {
   let compiled = null;
   let error = null;
   try {
@@ -169,7 +171,9 @@ function onConfigure({ attemptId, config }) {
     id: attemptId,
     config: compiled,
     error,
-    tabId: null,
+    // The desktop host names the tab up front; on Android the first tab
+    // that receives "start" from the app claims the attempt.
+    tabId: tabId ?? null,
     handedOutOnce: new Map(),
   };
   // Waiters remove themselves once their attempt is configured.
@@ -177,12 +181,12 @@ function onConfigure({ attemptId, config }) {
 }
 
 /**
- * Resolves with the attempt once its `configure` message has arrived, or
- * with null after a timeout; the runner can announce a page before the app
- * has configured the attempt.
+ * Resolves with the current attempt once it satisfies [matches], or with
+ * null after a timeout; the runner can announce a page before the host has
+ * configured the attempt.
  */
-function waitForAttempt(attemptId) {
-  if (currentAttempt?.id === attemptId) {
+function waitForAttempt(matches) {
+  if (currentAttempt && matches(currentAttempt)) {
     return Promise.resolve(currentAttempt);
   }
   return new Promise(resolve => {
@@ -192,7 +196,7 @@ function waitForAttempt(attemptId) {
       resolve(attempt);
     };
     const waiter = () => {
-      if (currentAttempt?.id === attemptId) {
+      if (currentAttempt && matches(currentAttempt)) {
         finish(currentAttempt);
       }
     };
@@ -207,7 +211,7 @@ function splitPath(config, pathname) {
 }
 
 async function onReady({ attemptId, url }, sender) {
-  const attempt = await waitForAttempt(attemptId);
+  const attempt = await waitForAttempt(a => a.id === attemptId);
   if (!attempt) {
     return { type: "error", reason: "config-missing" };
   }
@@ -269,8 +273,30 @@ function onFailed({ attemptId, onceKey }) {
   }
 }
 
+/**
+ * Sent by the runner on every injection. On desktop the runner learns here
+ * whether its tab is the attempt's tab; on Android the app tells it over a
+ * native port instead.
+ */
+async function onHello(_message, sender) {
+  const transport = await transportPromise;
+  if (transport.native) {
+    return { type: "use-native-port" };
+  }
+  const tabId = sender.tab?.id;
+  const attempt = await waitForAttempt(a => a.tabId === tabId);
+  return attempt ? { type: "start", attemptId: attempt.id } : { type: "idle" };
+}
+
+async function onResult(message) {
+  const transport = await transportPromise;
+  transport.report(message);
+}
+
 const HANDLERS = {
+  hello: onHello,
   ready: onReady,
+  result: onResult,
   failed: onFailed,
 };
 
@@ -278,9 +304,27 @@ browser.runtime.onMessage.addListener((message, sender) =>
   HANDLERS[message?.type]?.(message, sender)
 );
 
-const nativePort = browser.runtime.connectNative(PORT_NAME);
-nativePort.onMessage.addListener(message => {
-  if (message?.type === "configure") {
-    onConfigure(message);
+/**
+ * The connection to the host: the app over native messaging on Android, and
+ * WebFlow.sys.mjs through the webFlow experiment API on desktop.
+ */
+async function connectToHost() {
+  const { os } = await browser.runtime.getPlatformInfo();
+  if (os === "android") {
+    const port = browser.runtime.connectNative(PORT_NAME);
+    port.onMessage.addListener(message => {
+      if (message?.type === "configure") {
+        onConfigure(message);
+      }
+    });
+    return { native: true, report: message => port.postMessage(message) };
   }
-});
+  browser.webFlow.onConfigure.addListener(onConfigure);
+  const pending = await browser.webFlow.getAttempt();
+  if (pending) {
+    onConfigure(pending);
+  }
+  return { native: false, report: message => browser.webFlow.report(message) };
+}
+
+const transportPromise = connectToHost();

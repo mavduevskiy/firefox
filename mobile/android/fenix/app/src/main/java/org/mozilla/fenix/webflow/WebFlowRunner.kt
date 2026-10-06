@@ -76,6 +76,11 @@ class WebFlowRunner(
                     )
                     onConfigured()
                 }
+
+                // The runner reports every result through the background script.
+                override fun onPortMessage(message: Any, port: Port) {
+                    logger.info("runner: $message")
+                }
             },
         )
         extensionController.install(
@@ -92,10 +97,6 @@ class WebFlowRunner(
                 object : MessageHandler {
                     override fun onPortConnected(port: Port) {
                         port.postMessage(JSONObject().put("type", "start").put("attemptId", attemptId))
-                    }
-
-                    override fun onPortMessage(message: Any, port: Port) {
-                        logger.info("runner: $message")
                     }
                 },
             )
