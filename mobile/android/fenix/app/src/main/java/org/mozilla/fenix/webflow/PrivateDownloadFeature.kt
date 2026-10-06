@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import mozilla.components.browser.state.selector.findTab
+import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadsUseCases
@@ -63,7 +63,7 @@ class PrivateDownloadFeature(
 
     override fun start() {
         observerScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { it.findTab(tabId)?.content?.download }
+            flow.mapNotNull { it.findTabOrCustomTab(tabId)?.content?.download }
                 .distinctUntilChangedBy { it.id }
                 .collect { handle(it) }
         }

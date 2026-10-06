@@ -3,8 +3,9 @@
 
 "use strict";
 
-// Tests the journey controller (the extension's background script) on its
-// own, with a fake `browser` object standing in for the WebExtension APIs.
+// Tests the shared journey controller, and the Android background glue
+// around it with a fake `browser` object standing in for the WebExtension
+// APIs.
 
 const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
@@ -55,57 +56,17 @@ const CONFIG = {
   ],
 };
 
-const TAB_ID = 7;
+const scope = {};
+Services.scriptloader.loadSubScript(
+  "resource://webflow/extension/web-flow-controller.js",
+  scope
+);
+const { WebFlowController } = scope;
 
-/** Loads the controller with a fake desktop host and returns its handles. */
-async function loadController() {
-  let onMessage;
-  let onConfigure;
-  const reports = [];
-  const sandbox = Cu.Sandbox(Services.scriptSecurityManager.getSystemPrincipal(), {
-    wantGlobalProperties: ["URL"],
-    freshCompartment: true,
-  });
-  sandbox.setTimeout = setTimeout;
-  sandbox.clearTimeout = clearTimeout;
-  sandbox.browser = {
-    runtime: {
-      getPlatformInfo: async () => ({ os: "linux" }),
-      onMessage: { addListener: l => (onMessage = l) },
-    },
-    webFlow: {
-      onConfigure: { addListener: l => (onConfigure = l) },
-      getAttempt: async () => null,
-      report: async m => reports.push(m),
-    },
-  };
-  Services.scriptloader.loadSubScript(
-    "resource://webflow/extension/web-flow-background.js",
-    sandbox
-  );
-  // The controller subscribes to its host after an async platform check.
-  while (!onConfigure) {
-    await Promise.resolve();
-  }
-  return {
-    send: (message, tabId = TAB_ID) => onMessage(message, { tab: { id: tabId } }),
-    configure: (config = CONFIG, attemptId = "a1") =>
-      onConfigure({ attemptId, tabId: TAB_ID, config }),
-    reports,
-  };
-}
+const url = path => `https://example.com${path}`;
 
-const ready = (path, attemptId = "a1") => ({
-  type: "ready",
-  attemptId,
-  url: `https://example.com${path}`,
-});
-
-add_task(async function test_plan_resolves_selectors_and_prefix() {
-  const controller = await loadController();
-  controller.configure();
-
-  const plan = await controller.send(ready("/u/1/"));
+add_task(function test_plan_resolves_selectors_and_prefix() {
+  const plan = new WebFlowController(CONFIG).plan(url("/u/1/"));
 
   Assert.equal(plan.type, "plan");
   Assert.equal(plan.pageId, "start");
@@ -115,101 +76,120 @@ add_task(async function test_plan_resolves_selectors_and_prefix() {
   Assert.equal(plan.actions[1].url, "{prefix}/wait");
 });
 
-add_task(async function test_action_overrides_and_nulls() {
-  const controller = await loadController();
-  controller.configure();
+add_task(function test_action_overrides_and_nulls() {
+  const [action] = new WebFlowController(CONFIG).plan(url("/wait")).actions;
 
-  const plan = await controller.send(ready("/wait"));
-
-  const [action] = plan.actions;
   Assert.equal(action.timeoutMs, 5000, "action timeout overrides the default");
   Assert.equal(action.expectations[0].timeoutMs, 5000, "expectations inherit it");
   Assert.equal(action.expectations[0].selector, ".pending");
   Assert.ok(!("url" in action), "null values from Nimbus are dropped");
 });
 
-add_task(async function test_other_tabs_are_not_driven() {
-  const controller = await loadController();
-  controller.configure();
+add_task(function test_other_hosts_and_paths_are_idle() {
+  const controller = new WebFlowController(CONFIG);
 
-  const reply = await controller.send(ready("/"), TAB_ID + 1);
-
-  Assert.deepEqual({ ...reply }, { type: "idle", reason: "foreign-tab" });
+  Assert.equal(controller.plan("https://other.example/").reason, "unhandled-host");
+  Assert.equal(controller.plan(url("/elsewhere")).reason, "unhandled-path");
 });
 
-add_task(async function test_hello_starts_only_the_attempt_tab() {
-  const controller = await loadController();
-  const hello = controller.send({ type: "hello" });
-  controller.configure();
+add_task(function test_once_pages_and_auth() {
+  const controller = new WebFlowController(CONFIG);
 
-  Assert.deepEqual({ ...(await hello) }, { type: "start", attemptId: "a1" });
-});
+  Assert.equal(controller.plan(url("/retry")).type, "plan");
+  Assert.equal(controller.plan(url("/retry")).reason, "already-run");
+  Assert.equal(controller.plan(url("/no-retry")).type, "plan");
 
-add_task(async function test_once_pages_and_auth() {
-  const controller = await loadController();
-  controller.configure();
-
-  Assert.equal((await controller.send(ready("/retry"))).type, "plan");
-  Assert.equal((await controller.send(ready("/retry"))).reason, "already-run");
-  Assert.equal((await controller.send(ready("/no-retry"))).type, "plan");
-
-  const auth = await controller.send({
-    type: "ready",
-    attemptId: "a1",
-    url: "https://auth.example.com/signin",
-  });
-  Assert.equal(auth.reason, "auth-required");
+  Assert.ok(controller.isAuthHost("auth.example.com"));
+  Assert.equal(controller.plan("https://auth.example.com/signin").reason, "auth-required");
 
   Assert.equal(
-    (await controller.send(ready("/retry"))).type,
+    controller.plan(url("/retry")).type,
     "plan",
     "a page interrupted by auth runs again"
   );
   Assert.equal(
-    (await controller.send(ready("/no-retry"))).reason,
+    controller.plan(url("/no-retry")).reason,
     "already-run",
     "unless it opted out of retrying"
   );
 });
 
-add_task(async function test_failed_action_releases_once_page() {
-  const controller = await loadController();
-  controller.configure();
+add_task(function test_release_lets_a_failed_once_page_run_again() {
+  const controller = new WebFlowController(CONFIG);
 
-  const plan = await controller.send(ready("/retry"));
-  controller.send({ type: "failed", attemptId: "a1", onceKey: plan.onceKey });
+  controller.release(controller.plan(url("/retry")).onceKey);
 
-  Assert.equal((await controller.send(ready("/retry"))).type, "plan");
+  Assert.equal(controller.plan(url("/retry")).type, "plan");
 });
 
-add_task(async function test_new_attempt_resets_state() {
-  const controller = await loadController();
-  controller.configure();
-  await controller.send(ready("/retry"));
-
-  controller.configure(CONFIG, "a2");
-
-  Assert.equal((await controller.send(ready("/retry", "a2"))).type, "plan");
-});
-
-add_task(async function test_invalid_config_is_reported_by_name() {
-  const controller = await loadController();
+add_task(function test_invalid_config_is_reported_by_name() {
   const broken = structuredClone(CONFIG);
   broken.journey[0].actions[0]["selector-ref"] = "missing";
-  controller.configure(broken);
 
-  const reply = await controller.send(ready("/"));
+  const controller = new WebFlowController(broken);
 
-  Assert.equal(reply.type, "error");
-  Assert.stringContains(reply.reason, 'unknown selector "missing"');
+  Assert.stringContains(controller.error, 'unknown selector "missing"');
+  Assert.equal(controller.plan(url("/")).type, "error");
 });
 
-add_task(async function test_results_are_forwarded_to_the_host() {
-  const controller = await loadController();
-  controller.configure();
-  const result = { type: "result", attemptId: "a1", actionId: "x", status: "success" };
+/** Loads the Android background glue with a fake app on the native port. */
+function loadBackground() {
+  let onMessage;
+  let onNativeMessage;
+  const sentToApp = [];
+  const sandbox = Cu.Sandbox(Services.scriptSecurityManager.getSystemPrincipal(), {
+    wantGlobalProperties: ["URL"],
+    freshCompartment: true,
+  });
+  sandbox.setTimeout = setTimeout;
+  sandbox.clearTimeout = clearTimeout;
+  sandbox.browser = {
+    runtime: {
+      connectNative: () => ({
+        onMessage: { addListener: l => (onNativeMessage = l) },
+        postMessage: m => sentToApp.push(m),
+      }),
+      onMessage: { addListener: l => (onMessage = l) },
+    },
+  };
+  for (const file of ["web-flow-controller.js", "web-flow-background.js"]) {
+    Services.scriptloader.loadSubScript(`resource://webflow/extension/${file}`, sandbox);
+  }
+  return {
+    send: (message, tabId = 7) => onMessage(message, { tab: { id: tabId } }),
+    configure: (attemptId = "a1") =>
+      onNativeMessage({ type: "configure", attemptId, config: CONFIG }),
+    sentToApp,
+  };
+}
 
-  await controller.send(result);
+const ready = (path, attemptId = "a1") => ({ type: "ready", attemptId, url: url(path) });
 
-  Assert.deepEqual(controller.reports.map(r => ({ ...r })), [result]);
+add_task(async function test_background_waits_for_configure() {
+  const background = loadBackground();
+  const plan = background.send(ready("/"));
+  background.configure();
+
+  Assert.equal((await plan).pageId, "start");
+});
+
+add_task(async function test_background_drives_only_the_first_tab() {
+  const background = loadBackground();
+  background.configure();
+  await background.send(ready("/"));
+
+  Assert.equal((await background.send(ready("/"), 8)).reason, "foreign-tab");
+});
+
+add_task(async function test_background_resets_on_new_attempt_and_forwards_results() {
+  const background = loadBackground();
+  background.configure();
+  await background.send(ready("/retry"));
+  background.configure("a2");
+
+  Assert.equal((await background.send(ready("/retry", "a2"))).type, "plan");
+
+  const result = { type: "result", attemptId: "a2", actionId: "x", status: "success" };
+  background.send(result);
+  Assert.deepEqual(background.sentToApp.map(m => ({ ...m })), [result]);
 });

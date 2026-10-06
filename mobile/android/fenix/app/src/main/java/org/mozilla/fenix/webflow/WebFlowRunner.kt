@@ -4,38 +4,37 @@
 
 package org.mozilla.fenix.webflow
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.launch
-import mozilla.components.browser.state.selector.findTab
+import mozilla.components.browser.state.action.CustomTabListAction
+import mozilla.components.browser.state.action.EngineAction
+import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
-import mozilla.components.feature.tabs.TabsUseCases
-import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
 import org.json.JSONObject
 import java.util.UUID
 
 /**
- * Runs a web flow journey in a hidden tab with the built-in web flow runner
- * extension. One instance is one attempt.
+ * Runs a web flow journey in a hidden session with the built-in web flow
+ * runner extension. One instance is one attempt.
  *
- * @param engine The engine the extension is installed in.
- * @param store Observed for the hidden tab's engine session.
- * @param tabsUseCases Used to create and remove the hidden tab.
- * @param launchUrl The URL the hidden tab starts on.
+ * The session is registered in the store as a custom tab, like add-on
+ * popups: it stays out of the tabs tray and session restore, while
+ * store-based features (downloads, prompts) still work for it.
+ *
+ * @param engine Creates the session and runs the extension.
+ * @param store Holds the session as a custom tab.
+ * @param launchUrl The URL the session starts on.
  * @param config Provides the journey config sent to the extension.
  * @param onConfigured Invoked when the config was sent, for exposure recording.
  */
 class WebFlowRunner(
     private val engine: Engine,
     private val store: BrowserStore,
-    private val tabsUseCases: TabsUseCases,
     private val launchUrl: String,
     private val config: () -> JSONObject,
     private val onConfigured: () -> Unit = {},
@@ -50,21 +49,32 @@ class WebFlowRunner(
     /** Downloads created before this time belong to earlier attempts. */
     val startedAt: Long = System.currentTimeMillis()
 
-    /** The id of the hidden tab, available after [createTab]. */
+    /** The id of the session's custom tab, available after [createTab]. */
     lateinit var tabId: String
         private set
 
-    /** Creates the hidden tab the journey runs in. */
+    /**
+     * Creates the hidden session the journey runs in. It loads the launch URL
+     * only in [start], once the extension is installed.
+     */
     fun createTab() {
-        tabId = tabsUseCases.addTab(url = launchUrl, selectTab = false)
+        val session = engine.createSession()
+        engineSession = session
+        val tab = createCustomTab(url = launchUrl, source = SessionState.Source.Internal.CustomTab)
+        tabId = tab.id
+        store.dispatch(CustomTabListAction.AddCustomTabAction(tab))
+        // Linking registers the store's observer on the session, so its URL
+        // changes and download requests reach the store.
+        store.dispatch(EngineAction.LinkEngineSessionAction(tabId, session, skipLoading = true))
     }
 
     /**
      * Installs the extension, sends it the journey and starts the runner in
-     * the hidden tab only, so takeout pages the user opens elsewhere are left
-     * alone.
+     * the hidden session only, so takeout pages the user opens elsewhere are
+     * left alone.
      */
-    fun start(scope: CoroutineScope) {
+    fun start() {
+        val session = checkNotNull(engineSession)
         extensionController.registerBackgroundMessageHandler(
             object : MessageHandler {
                 override fun onPortConnected(port: Port) {
@@ -83,31 +93,28 @@ class WebFlowRunner(
                 }
             },
         )
+        extensionController.registerContentMessageHandler(
+            session,
+            object : MessageHandler {
+                override fun onPortConnected(port: Port) {
+                    port.postMessage(JSONObject().put("type", "start").put("attemptId", attemptId))
+                }
+            },
+        )
         extensionController.install(
             runtime = engine,
+            // Loading earlier could finish before the extension can inject
+            // its content script into the page.
+            onSuccess = { session.loadUrl(launchUrl) },
             onError = { error -> logger.error("Failed to install the web flow runner", error) },
         )
-        scope.launch {
-            val session = store.flow()
-                .mapNotNull { it.findTab(tabId)?.engineState?.engineSession }
-                .first()
-            engineSession = session
-            extensionController.registerContentMessageHandler(
-                session,
-                object : MessageHandler {
-                    override fun onPortConnected(port: Port) {
-                        port.postMessage(JSONObject().put("type", "start").put("attemptId", attemptId))
-                    }
-                },
-            )
-        }
     }
 
-    /** Uninstalls the extension and removes the hidden tab. */
+    /** Uninstalls the extension and removes the hidden session. */
     fun release() {
         extensionController.disconnectPort(engineSession)
         extensionController.uninstall(engine)
-        tabsUseCases.removeTab(tabId)
+        store.dispatch(CustomTabListAction.RemoveCustomTabAction(tabId))
     }
 
     private companion object {

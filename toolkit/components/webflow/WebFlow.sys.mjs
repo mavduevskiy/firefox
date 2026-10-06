@@ -5,89 +5,122 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+  HiddenBrowserManager: "resource://gre/modules/HiddenFrame.sys.mjs",
 });
 
-const ADDON_ID = "web-flow-runner@mozilla.org";
-const ADDON_BASE_URL = "resource://webflow/extension/";
+const CONTROLLER_URL = "resource://webflow/extension/web-flow-controller.js";
+const MESSAGE_MANAGER_GROUP = "webflow";
 
 /**
- * Desktop host of the web flow runner extension. It runs a journey, the same
- * config the Android app sends from Nimbus, in a tab, and passes every
- * message from the runner to the caller. Android hosts the extension from
- * the app instead.
- *
- * One attempt runs at a time; starting a new one replaces the previous one.
+ * Desktop host of the web flow runner. It runs a journey, the same config
+ * the Android app gets from Nimbus, in a hidden browser, with the journey
+ * controller and action runner Android uses too. The WebFlow actors only
+ * exist in that browser, so pages the user opens in tabs are never driven.
  */
 export const WebFlow = {
-  /** @type {?{attemptId: string, tab: object, config: object, onMessage: Function}} */
-  currentAttempt: null,
-
-  _configureListeners: new Set(),
+  /** Attempts in progress, by hidden browser. */
+  _attempts: new Map(),
 
   /**
-   * Installs the extension and starts an attempt in `tab`. The tab should
-   * be loaded with the journey's launch URL only after this resolves, so the
-   * runner there finds the attempt configured.
+   * Runs a journey in a hidden browser until `done` settles.
+   *
+   * The journey only drives pages; what ends it (for example a completed
+   * download) is up to the caller, which signals it through `done`.
    *
    * @param {object} options
-   * @param {object} options.tab The native tab the journey runs in.
    * @param {object} options.config The journey config, in the Nimbus kebab-case form.
-   * @param {Function} options.onMessage Called with every message from the runner.
-   * @returns {Promise<string>} The id of the attempt.
+   * @param {Promise} options.done Settles when the caller's goal is reached or abandoned.
+   * @param {Function} options.onMessage Called with every result the runner reports.
+   * @param {Function} options.onAuthRequired Called with the URL of an auth page the
+   *   journey reached, and a `resume` function. The user has to sign in
+   *   somewhere visible; calling `resume` afterwards reloads the last journey
+   *   page in the hidden browser, which shares the user's cookies.
+   * @returns {Promise} Resolves or rejects like `done`.
    */
-  async start({ tab, config, onMessage }) {
-    await this._installExtension();
-
-    const attemptId = Services.uuid.generateUUID().toString().slice(1, -1);
-    this.currentAttempt = { attemptId, tab, config, onMessage };
-    for (const listener of this._configureListeners) {
-      listener(this.currentAttempt);
+  async run({ config, done, onMessage, onAuthRequired }) {
+    const controller = this._createController(config);
+    if (controller.error) {
+      throw new Error(controller.error);
     }
-    return attemptId;
+    this._registerActor();
+
+    return lazy.HiddenBrowserManager.withHiddenBrowser(
+      async browser => {
+        const load = url => {
+          const uri = Services.io.newURI(url);
+          browser.loadURI(uri, {
+            triggeringPrincipal: Services.scriptSecurityManager.createContentPrincipal(uri, {}),
+          });
+        };
+        const attempt = {
+          controller,
+          onMessage,
+          lastJourneyUrl: config["launch-url"],
+          onAuthRequired: url => onAuthRequired(url, () => load(attempt.lastJourneyUrl)),
+        };
+        this._attempts.set(browser, attempt);
+        try {
+          load(config["launch-url"]);
+          return await done;
+        } finally {
+          this._attempts.delete(browser);
+          browser.stop();
+        }
+      },
+      { messageManagerGroup: MESSAGE_MANAGER_GROUP }
+    );
   },
 
-  /**
-   * Ends the attempt and uninstalls the extension.
-   *
-   * @param {string} attemptId The attempt to stop; other attempts are left alone.
-   */
-  async stop(attemptId) {
-    if (this.currentAttempt?.attemptId !== attemptId) {
+  /** Used by WebFlowParent: the actions for the page at `url`. */
+  planFor(browser, url) {
+    const attempt = this._attempts.get(browser);
+    if (!attempt) {
+      return { type: "idle", reason: "no-attempt" };
+    }
+    const plan = attempt.controller.plan(url);
+    const { hostname } = new URL(url);
+    if (attempt.controller.isAuthHost(hostname)) {
+      attempt.onAuthRequired(url);
+    } else if (attempt.controller.isJourneyHost(hostname)) {
+      attempt.lastJourneyUrl = url;
+    }
+    return plan;
+  },
+
+  /** Used by WebFlowParent: passes a runner result to the caller. */
+  reportFor(browser, message) {
+    this._attempts.get(browser)?.onMessage(message);
+  },
+
+  /** Used by WebFlowParent: lets a failed `once` page run again. */
+  releaseFor(browser, onceKey) {
+    this._attempts.get(browser)?.controller.release(onceKey);
+  },
+
+  _createController(config) {
+    if (!this._WebFlowController) {
+      const scope = {};
+      Services.scriptloader.loadSubScript(CONTROLLER_URL, scope);
+      this._WebFlowController = scope.WebFlowController;
+    }
+    return new this._WebFlowController(config);
+  },
+
+  _registerActor() {
+    if (this._actorRegistered) {
       return;
     }
-    this.currentAttempt = null;
-    await this._uninstallExtension();
-  },
-
-  async _installExtension() {
-    const manifest = await (await fetch(`${ADDON_BASE_URL}manifest.json`)).json();
-    await lazy.AddonManager.maybeInstallBuiltinAddon(ADDON_ID, manifest.version, ADDON_BASE_URL);
-  },
-
-  async _uninstallExtension() {
-    const addon = await lazy.AddonManager.getAddonByID(ADDON_ID);
-    await addon?.uninstall();
-  },
-
-  /** Used by the webFlow experiment API. */
-  addConfigureListener(listener) {
-    this._configureListeners.add(listener);
-  },
-
-  /** Used by the webFlow experiment API. */
-  removeConfigureListener(listener) {
-    this._configureListeners.delete(listener);
-  },
-
-  /**
-   * Used by the webFlow experiment API to pass a runner message on. Messages
-   * of earlier attempts are dropped.
-   */
-  report(message) {
-    const attempt = this.currentAttempt;
-    if (attempt && message?.attemptId === attempt.attemptId) {
-      attempt.onMessage(message);
-    }
+    ChromeUtils.registerWindowActor("WebFlow", {
+      parent: { esModuleURI: "moz-src:///toolkit/components/webflow/WebFlowParent.sys.mjs" },
+      child: {
+        esModuleURI: "moz-src:///toolkit/components/webflow/WebFlowChild.sys.mjs",
+        events: { pageshow: {} },
+      },
+      messageManagerGroups: [MESSAGE_MANAGER_GROUP],
+      // The journey runs on regular web pages. WebFlowParent takes nothing
+      // but results and the failed page's key from the child.
+      safeForUntrustedWebProcess: true,
+    });
+    this._actorRegistered = true;
   },
 };

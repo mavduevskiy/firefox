@@ -3,28 +3,18 @@
 
 "use strict";
 
-// Runs a journey on fixture pages through WebFlow.sys.mjs. The shipped
-// extension only matches Google pages, so the test loads the same script
-// files in a test extension that matches example.com.
+// Runs journeys on fixture pages through WebFlow.sys.mjs, in its hidden
+// browser, with the same controller and runner Android uses.
 
 const { WebFlow } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/webflow/WebFlow.sys.mjs"
 );
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
 
 const TEST_DIR = "/browser/toolkit/components/webflow/tests/browser/";
-const EXTENSION_FILES = [
-  "web-flow-background.js",
-  "web-flow-content.js",
-  "experiment-apis/webFlow.js",
-  "experiment-apis/webFlow.json",
-];
 
-const CONFIG = {
+const BASE_CONFIG = {
   hosts: ["example.com"],
-  "auth-hosts": ["auth.example.com"],
+  "auth-hosts": ["example.org"],
   "path-prefix-pattern": "^$",
   "timeout-ms": 5000,
   "settle-ms": 0,
@@ -33,80 +23,64 @@ const CONFIG = {
     pending: ".pending",
     "done-button": "#done",
   },
-  journey: [
-    {
-      id: "start",
-      "path-pattern": "start[.]html$",
-      actions: [
-        { id: "start-click", type: "click", "selector-ref": "start-button" },
-        {
-          id: "id-found",
-          type: "extract",
-          "selector-ref": "pending",
-          attribute: "data-id",
-          variable: "itemId",
-        },
-        {
-          id: "pending-gone",
-          type: "expect",
-          expectations: [{ type: "gone", "selector-ref": "pending" }],
-        },
-        { id: "go-done", type: "navigate", url: `${TEST_DIR}done.html?id={itemId}` },
-      ],
-    },
-    {
-      id: "done",
-      "path-pattern": "done[.]html$",
-      actions: [{ id: "done-click", type: "click", "selector-ref": "done-button" }],
-    },
-  ],
 };
 
-async function loadTestExtension() {
-  const files = {};
-  for (const name of EXTENSION_FILES) {
-    files[name] = await (await fetch(`resource://webflow/extension/${name}`)).text();
-  }
-  const manifest = await (await fetch("resource://webflow/extension/manifest.json")).json();
-  manifest.content_scripts[0].matches = ["https://example.com/*"];
-  manifest.permissions = ["tabs", "https://example.com/*"];
-  delete manifest.browser_specific_settings;
-  const extension = ExtensionTestUtils.loadExtension({
-    isPrivileged: true,
-    manifest,
-    files,
+/**
+ * Runs `config` until a result satisfies `isLast`, and returns the results.
+ */
+async function runJourney(config, isLast, onAuthRequired = () => {}) {
+  const messages = [];
+  const { promise: done, resolve, reject } = Promise.withResolvers();
+  await WebFlow.run({
+    config,
+    done,
+    onMessage: message => {
+      messages.push(message);
+      if (message.status === "error") {
+        reject(new Error(`${message.actionId}: ${message.detail}`));
+      } else if (isLast(message)) {
+        resolve();
+      }
+    },
+    onAuthRequired,
   });
-  await extension.startup();
-  return extension;
+  return messages;
 }
 
 add_task(async function test_journey_runs_across_pages() {
-  const sandbox = sinon.createSandbox();
-  sandbox.stub(WebFlow, "_installExtension").resolves();
-  sandbox.stub(WebFlow, "_uninstallExtension").resolves();
-  const extension = await loadTestExtension();
-
-  const messages = [];
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
-  const finished = new Promise(resolve => {
-    WebFlow.start({
-      tab,
-      config: CONFIG,
-      onMessage: message => {
-        messages.push(message);
-        if (message.actionId === "done-click" || message.status === "error") {
-          resolve();
-        }
+  const config = {
+    ...BASE_CONFIG,
+    "launch-url": `https://example.com${TEST_DIR}start.html`,
+    journey: [
+      {
+        id: "start",
+        "path-pattern": "start[.]html$",
+        actions: [
+          { id: "start-click", type: "click", "selector-ref": "start-button" },
+          {
+            id: "id-found",
+            type: "extract",
+            "selector-ref": "pending",
+            attribute: "data-id",
+            variable: "itemId",
+          },
+          {
+            id: "pending-gone",
+            type: "expect",
+            expectations: [{ type: "gone", "selector-ref": "pending" }],
+          },
+          { id: "go-done", type: "navigate", url: `${TEST_DIR}done.html?id={itemId}` },
+        ],
       },
-    }).then(attemptId => {
-      BrowserTestUtils.startLoadingURIString(
-        tab.linkedBrowser,
-        `https://example.com${TEST_DIR}start.html`
-      );
-      registerCleanupFunction(() => WebFlow.stop(attemptId));
-    });
-  });
-  await finished;
+      {
+        id: "done",
+        "path-pattern": "done[.]html$",
+        actions: [{ id: "done-click", type: "click", "selector-ref": "done-button" }],
+      },
+    ],
+  };
+
+  const messages = await runJourney(config, m => m.actionId === "done-click");
 
   Assert.deepEqual(
     messages.map(m => `${m.actionId}:${m.status}`),
@@ -122,15 +96,58 @@ add_task(async function test_journey_runs_across_pages() {
     "every action of both pages ran in order"
   );
   Assert.equal(messages.find(m => m.actionId === "id-found").detail, "item-42");
-
-  const clicked = await SpecialPowers.spawn(
-    tab.linkedBrowser,
-    [],
-    () => content.document.body.dataset.clicked
+  Assert.equal(
+    messages.find(m => m.actionId === "go-done").detail,
+    `${TEST_DIR}done.html?id=item-42`,
+    "the extracted value reached the next page"
   );
-  Assert.equal(clicked, "item-42", "the extracted value reached the next page");
+});
 
-  BrowserTestUtils.removeTab(tab);
-  await extension.unload();
-  sandbox.restore();
+add_task(async function test_auth_page_is_reported_and_journey_resumes() {
+  const startUrl = `https://example.com${TEST_DIR}start.html`;
+  const config = {
+    ...BASE_CONFIG,
+    "launch-url": startUrl,
+    journey: [
+      {
+        id: "start",
+        "path-pattern": "start[.]html$",
+        once: true,
+        "retry-after-auth": false,
+        actions: [
+          { id: "to-auth", type: "navigate", url: `https://example.org${TEST_DIR}done.html` },
+        ],
+      },
+    ],
+  };
+  const authUrls = [];
+
+  const messages = await runJourney(
+    config,
+    m => m.actionId === "already-run",
+    (url, resume) => {
+      authUrls.push(url);
+      resume();
+    }
+  );
+
+  Assert.deepEqual(authUrls, [`https://example.org${TEST_DIR}done.html`]);
+  Assert.deepEqual(
+    messages.map(m => m.actionId),
+    ["page:start", "to-auth", "auth-required", "already-run"],
+    "resuming reloaded the last journey page in the hidden browser"
+  );
+});
+
+add_task(async function test_invalid_config_is_rejected() {
+  const config = {
+    ...BASE_CONFIG,
+    "launch-url": "https://example.com/",
+    journey: [{ id: "p", "path-pattern": "^/$", actions: [{ id: "x", type: "nope" }] }],
+  };
+
+  await Assert.rejects(
+    WebFlow.run({ config, done: Promise.resolve(), onMessage() {}, onAuthRequired() {} }),
+    /unknown action type "nope"/
+  );
 });

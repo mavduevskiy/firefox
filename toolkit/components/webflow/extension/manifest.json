@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Web Flow Runner",
-  "description": "Drives multi-page web flows, such as data exports, in a tab on behalf of the browser.",
-  "version": "1.0.0",
+  "description": "Drives multi-page web flows, such as data exports, in a hidden tab on behalf of Firefox for Android.",
+  "version": "158.0.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "web-flow-runner@mozilla.org"
@@ -15,23 +15,13 @@
         "https://passwords.google.com/*",
         "https://accounts.google.com/*"
       ],
-      "js": ["web-flow-content.js"],
+      "js": ["web-flow-runner.js", "web-flow-content.js"],
       "run_at": "document_idle"
     }
   ],
   "background": {
-    "scripts": ["web-flow-background.js"],
+    "scripts": ["web-flow-controller.js", "web-flow-background.js"],
     "persistent": true
-  },
-  "experiment_apis": {
-    "webFlow": {
-      "schema": "experiment-apis/webFlow.json",
-      "parent": {
-        "scopes": ["addon_parent"],
-        "script": "experiment-apis/webFlow.js",
-        "paths": [["webFlow"]]
-      }
-    }
   },
   "permissions": [
     "mozillaAddons",

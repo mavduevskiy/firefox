@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.helper.Target
-import mozilla.components.browser.state.selector.findTab
+import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.compose.engine.WebContent
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.feature.downloads.DownloadsFeature
@@ -61,26 +61,26 @@ class ImportFromGoogleFragment : Fragment() {
         val authRequired =
             components.core.store
                 .observeAsComposableState {
-                    it.findTab(tabId)?.content?.url?.contains(GOOGLE_AUTH_URL)
+                    it.findCustomTab(tabId)?.content?.url?.contains(GOOGLE_AUTH_URL)
                 }
                 .value
 
-//        if (authRequired == true) {
+        if (authRequired == true) {
             FirefoxTheme {
                 WebContent(
                     components.core.engine,
                     components.core.store,
-                    Target.Tab(tabId),
+                    Target.CustomTab(tabId),
                 )
             }
-//        }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         setUpDownloads(view)
-        runner.start(lifecycleScope)
+        runner.start()
     }
 
     /**
@@ -208,7 +208,6 @@ class ImportFromGoogleFragment : Fragment() {
         runner = WebFlowRunner(
             engine = requireComponents.core.engine,
             store = requireComponents.core.store,
-            tabsUseCases = requireComponents.useCases.tabsUseCases,
             launchUrl = feature.value().launchUrl,
             config = { feature.value().toJSONObject() },
             onConfigured = { feature.recordExposure() },

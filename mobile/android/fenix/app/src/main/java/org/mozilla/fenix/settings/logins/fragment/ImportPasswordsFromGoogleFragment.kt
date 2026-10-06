@@ -57,7 +57,6 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
         runner = WebFlowRunner(
             engine = requireComponents.core.engine,
             store = requireComponents.core.store,
-            tabsUseCases = requireComponents.useCases.tabsUseCases,
             launchUrl = feature.value().launchUrl,
             config = { feature.value().toJSONObject() },
             onConfigured = { feature.recordExposure() },
@@ -74,7 +73,7 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
             WebContent(
                 components.core.engine,
                 components.core.store,
-                Target.Tab(runner.tabId),
+                Target.CustomTab(runner.tabId),
             )
         }
     }
@@ -104,7 +103,7 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
             owner = viewLifecycleOwner,
             view = view,
         )
-        runner.start(lifecycleScope)
+        runner.start()
     }
 
     /**

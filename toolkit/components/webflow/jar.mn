@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# The controller and runner are shared with Android's extension; the
+# extension's Android glue is packaged only so the xpcshell tests can load it.
 toolkit.jar:
 % resource webflow %content/global/webflow/
-  content/global/webflow/extension/manifest.json                       (extension/manifest.json)
   content/global/webflow/extension/web-flow-background.js              (extension/web-flow-background.js)
-  content/global/webflow/extension/web-flow-content.js                 (extension/web-flow-content.js)
-  content/global/webflow/extension/experiment-apis/webFlow.js          (extension/experiment-apis/webFlow.js)
-  content/global/webflow/extension/experiment-apis/webFlow.json        (extension/experiment-apis/webFlow.json)
+  content/global/webflow/extension/web-flow-controller.js              (extension/web-flow-controller.js)
+  content/global/webflow/extension/web-flow-runner.js                  (extension/web-flow-runner.js)
   content/global/webflow/journeys/google-takeout-bookmarks.json        (journeys/google-takeout-bookmarks.json)
