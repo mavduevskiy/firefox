@@ -1,0 +1,233 @@
+{
+  "data": [
+    {
+      "id": "google-takeout-bookmarks",
+      "launch-url": "https://takeout.google.com/",
+      "hosts": [
+        "takeout.google.com"
+      ],
+      "auth-hosts": [
+        "accounts.google.com"
+      ],
+      "download-hosts": [
+        "takeout.google.com",
+        "takeout-download.usercontent.google.com"
+      ],
+      "path-prefix-pattern": "^/u/[0-9]+",
+      "timeout-ms": 25000,
+      "settle-ms": 500,
+      "selectors": {
+        "top-deselect-all": "div[role=\"tabpanel\"] div:nth-child(2) div:nth-child(2) button, div[role=\"tabpanel\"] button[aria-label=\"Deselect all\"]",
+        "chrome-unchecked": "input[name=\"Chrome\"]:not(:checked)",
+        "chrome-section": "c-wiz [data-id=\"chrome\"]",
+        "chrome-checkbox": "input[name=\"Chrome\"]",
+        "chrome-data-button": "div[data-id=\"chrome\"] div[data-is-transfer=\"false\"] button:not([disabled])",
+        "chrome-data-modal": "fieldset.rcetic",
+        "modal-deselect-all": "fieldset.rcetic div:nth-child(2) button:nth-of-type(2), fieldset.rcetic button[aria-label=\"Deselect all\"]",
+        "bookmarks-unchecked": "fieldset.rcetic input[value=\"bookmarks\"]:not(:checked)",
+        "bookmarks-checked": "fieldset.rcetic input[value=\"bookmarks\"]:checked",
+        "ok-button-enabled": "div[isfullscreen] div:nth-child(3) > div[role=\"button\"]:not([aria-disabled]):nth-of-type(2)",
+        "next-step-button": "div[role=\"tabpanel\"] > div:nth-child(1) > div:nth-child(2) button, div[role=\"tabpanel\"] button[aria-label=\"Next step\"]",
+        "create-export-button": "div[data-configure-step=\"1\"] button",
+        "pending-archive": "div[data-in-progress=\"true\"][data-archive-id]",
+        "download-link": "div[data-is-downloaded=\"false\"] a[href*=\"&i=0&user=\"]"
+      },
+      "journey": [
+        {
+          "id": "configure-export",
+          "path-pattern": "^(/settings/takeout)?/?$",
+          "actions": [
+            {
+              "id": "deselect-all-click",
+              "type": "click",
+              "selector-ref": "top-deselect-all"
+            },
+            {
+              "id": "deselect-all-confirmed",
+              "type": "expect",
+              "expectations": [
+                {
+                  "type": "element",
+                  "selector-ref": "chrome-unchecked"
+                }
+              ]
+            },
+            {
+              "id": "chrome-section-scroll",
+              "type": "scroll",
+              "selector-ref": "chrome-section"
+            },
+            {
+              "id": "chrome-section-click",
+              "type": "click",
+              "selector-ref": "chrome-checkbox"
+            },
+            {
+              "id": "chrome-data-button-click",
+              "type": "click",
+              "selector-ref": "chrome-data-button"
+            },
+            {
+              "id": "chrome-data-modal-shown",
+              "type": "expect",
+              "expectations": [
+                {
+                  "type": "element",
+                  "selector-ref": "chrome-data-modal"
+                }
+              ]
+            },
+            {
+              "id": "modal-deselect-all-click",
+              "type": "click",
+              "selector-ref": "modal-deselect-all"
+            },
+            {
+              "id": "modal-deselect-all-confirmed",
+              "type": "expect",
+              "expectations": [
+                {
+                  "type": "element",
+                  "selector-ref": "bookmarks-unchecked"
+                }
+              ]
+            },
+            {
+              "id": "bookmarks-checkbox-click",
+              "type": "click",
+              "selector-ref": "bookmarks-unchecked"
+            },
+            {
+              "id": "bookmarks-checked",
+              "type": "expect",
+              "expectations": [
+                {
+                  "type": "element",
+                  "selector-ref": "bookmarks-checked"
+                },
+                {
+                  "type": "element",
+                  "selector-ref": "ok-button-enabled"
+                }
+              ]
+            },
+            {
+              "id": "ok-button-click",
+              "type": "click",
+              "selector-ref": "ok-button-enabled"
+            },
+            {
+              "id": "next-step-scroll",
+              "type": "scroll",
+              "selector-ref": "next-step-button"
+            },
+            {
+              "id": "next-step-click",
+              "type": "click",
+              "selector-ref": "next-step-button"
+            },
+            {
+              "id": "create-export-scroll",
+              "type": "scroll",
+              "selector-ref": "create-export-button"
+            },
+            {
+              "id": "create-export-click",
+              "type": "click",
+              "selector-ref": "create-export-button"
+            },
+            {
+              "id": "navigate-to-manage",
+              "type": "navigate",
+              "url": "{prefix}/manage"
+            }
+          ]
+        },
+        {
+          "id": "download-archive",
+          "path-pattern": "^/manage/archive/",
+          "once": true,
+          "actions": [
+            {
+              "id": "download-link-click",
+              "type": "click",
+              "selector-ref": "download-link",
+              "timeout-ms": 300000
+            }
+          ]
+        },
+        {
+          "id": "wait-for-export",
+          "path-pattern": "^/(manage|downloads)",
+          "actions": [
+            {
+              "id": "export-id-found",
+              "type": "extract",
+              "selector-ref": "pending-archive",
+              "attribute": "data-archive-id",
+              "variable": "archiveId",
+              "timeout-ms": 300000
+            },
+            {
+              "id": "export-ready",
+              "type": "expect",
+              "expectations": [
+                {
+                  "type": "gone",
+                  "selector-ref": "pending-archive",
+                  "timeout-ms": 300000
+                }
+              ]
+            },
+            {
+              "id": "navigate-to-archive",
+              "type": "navigate",
+              "url": "{prefix}/manage/archive/{archiveId}"
+            }
+          ]
+        }
+      ],
+      "last_modified": 1791244800000
+    },
+    {
+      "id": "google-passwords-import",
+      "launch-url": "https://passwords.google.com/options",
+      "hosts": [
+        "passwords.google.com"
+      ],
+      "auth-hosts": [
+        "accounts.google.com"
+      ],
+      "download-file-pattern": "^Google Passwords.*[.]csv$",
+      "path-prefix-pattern": "^/u/[0-9]+",
+      "timeout-ms": 25000,
+      "settle-ms": 500,
+      "selectors": {
+        "export-button": "div[jsname=\"Qo3m8c\"] button",
+        "export-confirm-button": "div[role=\"dialog\"] button[data-mdc-dialog-action=\"ok\"]"
+      },
+      "journey": [
+        {
+          "id": "export-passwords",
+          "path-pattern": "^/options",
+          "once": true,
+          "retry-after-auth": false,
+          "actions": [
+            {
+              "id": "export-click",
+              "type": "click",
+              "selector-ref": "export-button"
+            },
+            {
+              "id": "export-confirm-click",
+              "type": "click",
+              "selector-ref": "export-confirm-button"
+            }
+          ]
+        }
+      ],
+      "last_modified": 1791244800000
+    }
+  ],
+  "timestamp": 1791244800000
+}

@@ -6365,9 +6365,3 @@ webFlowTakeoutImport:
       type: boolean
       fallbackPref: browser.webflow.takeoutImport.enabled
       description: Whether the import can be started.
-    config:
-      type: json
-      description: >-
-        The journey config, in the same form as the Firefox for Android
-        `google-takeout-import` feature. When unset, the default shipped in
-        toolkit/components/webflow/journeys/google-takeout-bookmarks.json is used.

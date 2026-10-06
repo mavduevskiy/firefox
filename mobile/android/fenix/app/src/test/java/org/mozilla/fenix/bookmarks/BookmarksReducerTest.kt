@@ -1286,6 +1286,13 @@ class BookmarksReducerTest {
     }
 
     @Test
+    fun `WHEN an import succeeds THEN show the success snackbar with the count`() {
+        val result = bookmarksReducer(BookmarksState.default, SnackbarAction.ImportSucceeded(count = 3))
+
+        assertEquals(BookmarksSnackbarState.ImportSucceeded(count = 3), result.bookmarksSnackbarState)
+    }
+
+    @Test
     fun `GIVEN a list of a bookmarks WHEN a folder is deleted THEN load the number of nested bookmarks`() {
         val folder = BookmarkItem.Folder("Bookmark Folder", "guid0", null)
         val state = BookmarksState.default.copy(bookmarkItems = listOf(folder))

@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
@@ -220,13 +221,20 @@ private fun BookmarksList(store: BookmarksStore) {
                 )
             }
             BookmarksSnackbarState.ImportFailed -> stringResource(R.string.bookmark_import_failure_snackbar)
+            is BookmarksSnackbarState.ImportSucceeded -> {
+                val count = (state.bookmarksSnackbarState as BookmarksSnackbarState.ImportSucceeded).count
+                pluralStringResource(R.plurals.bookmark_import_success_snackbar, count, count)
+            }
             else -> ""
         }
 
     val fabHeight = remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(state.bookmarksSnackbarState) {
-        when (state.bookmarksSnackbarState) {
+    // The effect has to use the state it was launched for, which matches
+    // `snackbarMessage`: by the time it runs, `state` may be newer.
+    val snackbarState = state.bookmarksSnackbarState
+    LaunchedEffect(snackbarState) {
+        when (snackbarState) {
             BookmarksSnackbarState.None -> return@LaunchedEffect
             BookmarksSnackbarState.CantEditDesktopFolders ->
                 scope.launch {
@@ -249,7 +257,9 @@ private fun BookmarksList(store: BookmarksStore) {
                         onDismissPerformed = { store.dispatch(SnackbarAction.Dismissed) },
                     )
                 }
-            BookmarksSnackbarState.ImportFailed ->
+            BookmarksSnackbarState.ImportFailed,
+            is BookmarksSnackbarState.ImportSucceeded,
+            ->
                 scope.launch {
                     snackbarHostState.displaySnackbar(
                         message = snackbarMessage,

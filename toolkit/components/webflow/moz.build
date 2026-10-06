@@ -12,8 +12,6 @@ MOZ_SRC_FILES += [
 
 XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 
-PYTHON_UNITTEST_MANIFESTS += ["tests/python/python.toml"]
-
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 with Files("**"):

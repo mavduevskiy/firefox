@@ -1,3 +1,6 @@
 [DEFAULT]
 
 ["test_web_flow_controller.js"]
+
+["test_web_flow_journeys_dump.js"]
+run-if = ["buildapp == 'browser'"]

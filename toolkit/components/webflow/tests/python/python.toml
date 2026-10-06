@@ -1,4 +1,0 @@
-[DEFAULT]
-subsuite = "webflow"
-
-["test_journey_sync.py"]

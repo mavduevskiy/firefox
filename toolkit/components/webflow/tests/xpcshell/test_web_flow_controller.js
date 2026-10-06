@@ -7,10 +7,6 @@
 // around it with a fake `browser` object standing in for the WebExtension
 // APIs.
 
-const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-
 const CONFIG = {
   hosts: ["example.com"],
   "auth-hosts": ["auth.example.com"],
@@ -132,64 +128,64 @@ add_task(function test_invalid_config_is_reported_by_name() {
   Assert.equal(controller.plan(url("/")).type, "error");
 });
 
-/** Loads the Android background glue with a fake app on the native port. */
+/** Loads the Android background glue with a fake `browser` object. */
 function loadBackground() {
   let onMessage;
-  let onNativeMessage;
-  const sentToApp = [];
   const sandbox = Cu.Sandbox(Services.scriptSecurityManager.getSystemPrincipal(), {
     wantGlobalProperties: ["URL"],
     freshCompartment: true,
   });
-  sandbox.setTimeout = setTimeout;
-  sandbox.clearTimeout = clearTimeout;
   sandbox.browser = {
-    runtime: {
-      connectNative: () => ({
-        onMessage: { addListener: l => (onNativeMessage = l) },
-        postMessage: m => sentToApp.push(m),
-      }),
-      onMessage: { addListener: l => (onMessage = l) },
-    },
+    runtime: { onMessage: { addListener: l => (onMessage = l) } },
   };
   for (const file of ["web-flow-controller.js", "web-flow-background.js"]) {
     Services.scriptloader.loadSubScript(`resource://webflow/extension/${file}`, sandbox);
   }
-  return {
-    send: (message, tabId = 7) => onMessage(message, { tab: { id: tabId } }),
-    configure: (attemptId = "a1") =>
-      onNativeMessage({ type: "configure", attemptId, config: CONFIG }),
-    sentToApp,
-  };
+  return (message, tabId = 7) => onMessage(message, { tab: { id: tabId } });
 }
 
-const ready = (path, attemptId = "a1") => ({ type: "ready", attemptId, url: url(path) });
+const ready = (path, attemptId = "a1") => ({
+  type: "ready",
+  attemptId,
+  config: CONFIG,
+  url: url(path),
+});
 
-add_task(async function test_background_waits_for_configure() {
-  const background = loadBackground();
-  const plan = background.send(ready("/"));
-  background.configure();
+add_task(async function test_background_creates_the_controller_from_ready() {
+  const send = loadBackground();
 
-  Assert.equal((await plan).pageId, "start");
+  Assert.equal((await send(ready("/"))).pageId, "start");
+});
+
+add_task(async function test_background_keeps_the_controller_of_an_attempt() {
+  const send = loadBackground();
+  await send(ready("/retry"));
+
+  Assert.equal(
+    (await send(ready("/retry"))).reason,
+    "already-run",
+    "the second page of the attempt sees the first page's state"
+  );
 });
 
 add_task(async function test_background_drives_only_the_first_tab() {
-  const background = loadBackground();
-  background.configure();
-  await background.send(ready("/"));
+  const send = loadBackground();
+  await send(ready("/"));
 
-  Assert.equal((await background.send(ready("/"), 8)).reason, "foreign-tab");
+  Assert.equal((await send(ready("/"), 8)).reason, "foreign-tab");
 });
 
-add_task(async function test_background_resets_on_new_attempt_and_forwards_results() {
-  const background = loadBackground();
-  background.configure();
-  await background.send(ready("/retry"));
-  background.configure("a2");
+add_task(async function test_background_starts_over_on_a_new_attempt() {
+  const send = loadBackground();
+  await send(ready("/retry"));
 
-  Assert.equal((await background.send(ready("/retry", "a2"))).type, "plan");
+  Assert.equal((await send(ready("/retry", "a2"), 9)).type, "plan");
+});
 
-  const result = { type: "result", attemptId: "a2", actionId: "x", status: "success" };
-  background.send(result);
-  Assert.deepEqual(background.sentToApp.map(m => ({ ...m })), [result]);
+add_task(async function test_background_failed_releases_the_once_page() {
+  const send = loadBackground();
+  const plan = await send(ready("/retry"));
+  send({ type: "failed", attemptId: "a1", onceKey: plan.onceKey });
+
+  Assert.equal((await send(ready("/retry"))).type, "plan");
 });

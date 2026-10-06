@@ -6,38 +6,37 @@
 
 /**
  * Android glue around the shared action runner (web-flow-runner.js, loaded
- * before this script). The app sends "start" over a native port it only
- * listens to for its hidden tab, so pages the user opens in other tabs are
- * left alone. Once started, the runner asks the background controller for the
- * actions of the current page and reports each result back through it.
+ * before this script). Every page opens a native port to the app, but the app
+ * only answers in its hidden tab, with "start" carrying the attempt id and the
+ * journey config; pages the user opens in other tabs are left alone. Once
+ * started, the runner asks the background controller for the actions of the
+ * current page and reports each result to the app over the same port.
  */
 (() => {
   const PORT_NAME = "mozacWebFlowRunner";
+  const port = browser.runtime.connectNative(PORT_NAME);
+  let started = false;
 
-  function reporter(attemptId) {
-    return (actionId, status, detail) =>
-      browser.runtime.sendMessage({
+  async function start({ attemptId, config }) {
+    if (started) {
+      return;
+    }
+    started = true;
+    const report = (actionId, status, detail) =>
+      port.postMessage({
         type: "result",
         attemptId,
         actionId,
         status,
         ...(detail === undefined ? {} : { detail }),
       });
-  }
 
-  let started = false;
-
-  async function start(attemptId) {
-    if (started) {
-      return;
-    }
-    started = true;
-    const report = reporter(attemptId);
     let plan;
     try {
       plan = await browser.runtime.sendMessage({
         type: "ready",
         attemptId,
+        config,
         url: location.href,
       });
     } catch (e) {
@@ -58,9 +57,9 @@
     }
   }
 
-  browser.runtime.connectNative(PORT_NAME).onMessage.addListener(message => {
+  port.onMessage.addListener(message => {
     if (message?.type === "start") {
-      start(message.attemptId);
+      start(message);
     }
   });
 })();

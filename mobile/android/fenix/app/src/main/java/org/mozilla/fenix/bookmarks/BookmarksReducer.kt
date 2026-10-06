@@ -336,6 +336,10 @@ private fun BookmarksState.handleSnackbarAction(action: SnackbarAction): Bookmar
         SnackbarAction.ImportFailed -> {
             this.copy(bookmarksSnackbarState = BookmarksSnackbarState.ImportFailed)
         }
+
+        is SnackbarAction.ImportSucceeded -> {
+            this.copy(bookmarksSnackbarState = BookmarksSnackbarState.ImportSucceeded(action.count))
+        }
     }
 }
 

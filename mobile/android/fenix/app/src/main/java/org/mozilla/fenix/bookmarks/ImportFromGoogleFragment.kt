@@ -9,6 +9,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
@@ -25,6 +28,7 @@ import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.android.org.json.toList
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.bookmarks.importer.FenixImporterEvent
@@ -38,15 +42,19 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.webflow.WebFlowJourneyRepository
 import org.mozilla.fenix.webflow.WebFlowRunner
+import org.json.JSONObject
 import java.io.File
 
 private const val GOOGLE_AUTH_URL = "https://accounts.google.com/"
 
 /** The screen to guide the user through importing data from Google. */
 class ImportFromGoogleFragment : Fragment() {
-    private lateinit var runner: WebFlowRunner
-    private val tabId get() = runner.tabId
+    private var runner: WebFlowRunner? = null
+
+    // Null until the journey is loaded and the runner's tab is created.
+    private var tabId by mutableStateOf<String?>(null)
     private val logger = Logger("ImportFromGoogleFragment")
     private var importStarted = false
     private val extractDirectory by lazy { File(requireContext().cacheDir, EXTRACT_DIRECTORY) }
@@ -58,6 +66,7 @@ class ImportFromGoogleFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
+        val tabId = tabId ?: return@content
         val authRequired =
             components.core.store
                 .observeAsComposableState {
@@ -65,7 +74,7 @@ class ImportFromGoogleFragment : Fragment() {
                 }
                 .value
 
-        if (authRequired == true) {
+//        if (authRequired == true) {
             FirefoxTheme {
                 WebContent(
                     components.core.engine,
@@ -73,14 +82,43 @@ class ImportFromGoogleFragment : Fragment() {
                     Target.CustomTab(tabId),
                 )
             }
-        }
+//        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setUpDownloads(view)
-        runner.start()
+        val journeys = requireComponents.webFlowJourneys
+        viewLifecycleOwner.lifecycleScope.launch {
+            val journey = withContext(Dispatchers.IO) {
+                journeys.journey(WebFlowJourneyRepository.GOOGLE_TAKEOUT_BOOKMARKS)
+            }
+            val launchUrl = journey?.optString(LAUNCH_URL).orEmpty()
+            if (journey == null || launchUrl.isEmpty()) {
+                logger.error("No usable ${WebFlowJourneyRepository.GOOGLE_TAKEOUT_BOOKMARKS} journey")
+                finishWith(FenixImporterEvent.Failure(FenixBookmarkImporterError.UNKNOWN_ERROR))
+                return@launch
+            }
+            val runner = runner ?: createRunner(launchUrl, journey)
+            val downloadHosts = journey.optJSONArray(DOWNLOAD_HOSTS)?.toList<String>().orEmpty().toSet()
+            setUpDownloads(view, runner, downloadHosts)
+            runner.start()
+        }
+    }
+
+    private fun createRunner(launchUrl: String, journey: JSONObject): WebFlowRunner {
+        val feature = FxNimbus.features.googleTakeoutImport
+        return WebFlowRunner(
+            engine = requireComponents.core.engine,
+            store = requireComponents.core.store,
+            launchUrl = launchUrl,
+            config = { journey },
+            onConfigured = { feature.recordExposure() },
+        ).also {
+            it.createTab()
+            runner = it
+            tabId = it.tabId
+        }
     }
 
     /**
@@ -88,7 +126,7 @@ class ImportFromGoogleFragment : Fragment() {
      * hidden tab needs its own to start the archive download; a second
      * feature extracts the archive once the download completes.
      */
-    private fun setUpDownloads(view: View) {
+    private fun setUpDownloads(view: View, runner: WebFlowRunner, downloadHosts: Set<String>) {
         val components = requireComponents
         val context = requireContext().applicationContext
         val downloadFileUtils = DefaultDownloadFileUtils(
@@ -103,7 +141,7 @@ class ImportFromGoogleFragment : Fragment() {
                 store = components.core.store,
                 useCases = components.useCases.downloadUseCases,
                 downloadFileUtils = downloadFileUtils,
-                tabId = tabId,
+                tabId = runner.tabId,
                 downloadManager = FetchDownloadManager(
                     context,
                     components.core.store,
@@ -123,7 +161,7 @@ class ImportFromGoogleFragment : Fragment() {
             feature = TakeoutDownloadFeature(
                 context = context,
                 store = components.core.store,
-                hosts = FxNimbus.features.googleTakeoutImport.value().downloadHosts.toSet(),
+                hosts = downloadHosts,
                 startedAt = runner.startedAt,
                 extractDirectory = extractDirectory,
                 onExtracted = ::importBookmarks,
@@ -197,22 +235,7 @@ class ImportFromGoogleFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        runner.release()
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // The journey the extension runs comes from Nimbus.
-        val feature = FxNimbus.features.googleTakeoutImport
-        runner = WebFlowRunner(
-            engine = requireComponents.core.engine,
-            store = requireComponents.core.store,
-            launchUrl = feature.value().launchUrl,
-            config = { feature.value().toJSONObject() },
-            onConfigured = { feature.recordExposure() },
-        )
-        runner.createTab()
+        runner?.release()
     }
 
     companion object {
@@ -220,5 +243,7 @@ class ImportFromGoogleFragment : Fragment() {
         const val REQUEST_KEY = "import_from_google_request"
         private const val REQUEST_CODE_DOWNLOAD_PERMISSIONS = 1
         private const val EXTRACT_DIRECTORY = "takeout-import"
+        private const val LAUNCH_URL = "launch-url"
+        private const val DOWNLOAD_HOSTS = "download-hosts"
     }
 }

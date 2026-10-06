@@ -10,12 +10,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   WebFlow: "moz-src:///toolkit/components/webflow/WebFlow.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
-const DEFAULT_CONFIG_URL = "resource://webflow/journeys/google-takeout-bookmarks.json";
+const JOURNEYS_COLLECTION = "web-flow-journeys";
+const JOURNEY_ID = "google-takeout-bookmarks";
 const BOOKMARKS_ENTRY = "Bookmarks.html";
 const ATTEMPT_TIMEOUT_MS = 15 * 60 * 1000;
 
@@ -53,8 +55,13 @@ async function runImport() {
     throw new Error("browser.webflow.takeoutImport.enabled is false");
   }
   feature.recordExposureEvent();
-  const config =
-    feature.getVariable("config") ?? (await (await fetch(DEFAULT_CONFIG_URL)).json());
+  // Before the first sync, this returns the dump shipped with the build.
+  const [config] = await lazy.RemoteSettings(JOURNEYS_COLLECTION).get({
+    filters: { id: JOURNEY_ID },
+  });
+  if (!config) {
+    throw new Error(`No ${JOURNEY_ID} journey in ${JOURNEYS_COLLECTION}`);
+  }
 
   const startedAt = new Date();
   const { promise: archive, resolve, reject } = Promise.withResolvers();

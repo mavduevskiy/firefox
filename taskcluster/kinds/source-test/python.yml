@@ -670,20 +670,6 @@ webext:
             - 'browser/components/extensions/schemas/*.json'
             - 'mobile/shared/components/extensions/schemas/*.json'
 
-webflow:
-    description: web flow runner unit tests
-    platform:
-        - linux2404-64/opt
-    treeherder:
-        symbol: webflow
-    run:
-        using: python-test
-        subsuite: webflow
-    when:
-        files-changed:
-            - 'mobile/android/fenix/app/google-takeout-import.fml.yaml'
-            - 'toolkit/components/webflow/**'
-
 xpcom:
     description: xpcom unit tests
     platform:

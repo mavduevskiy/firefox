@@ -10,6 +10,9 @@ import android.os.StrictMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -30,7 +33,9 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.logins.ImportPasswordsDialogFragment
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.webflow.PrivateDownloadFeature
+import org.mozilla.fenix.webflow.WebFlowJourneyRepository
 import org.mozilla.fenix.webflow.WebFlowRunner
+import org.json.JSONObject
 import java.io.File
 
 /**
@@ -38,7 +43,10 @@ import java.io.File
  * running the Google Password Manager export in a hidden tab.
  */
 class ImportPasswordsFromGoogleFragment : SecureFragment() {
-    private lateinit var runner: WebFlowRunner
+    private var runner: WebFlowRunner? = null
+
+    // Null until the journey is loaded and the runner's tab is created.
+    private var tabId by mutableStateOf<String?>(null)
     private val logger = Logger("ImportPasswordsFromGoogleFragment")
     private var importStarted = false
     private val exportDirectory by lazy { File(requireContext().noBackupFilesDir, EXPORT_DIRECTORY) }
@@ -51,17 +59,6 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
         // An export left behind by an earlier attempt, for example when the
         // process was killed before it was deleted, must not outlive it.
         deleteExport(exportDirectory)
-
-        // The journey the extension runs comes from Nimbus.
-        val feature = FxNimbus.features.googlePasswordsImport
-        runner = WebFlowRunner(
-            engine = requireComponents.core.engine,
-            store = requireComponents.core.store,
-            launchUrl = feature.value().launchUrl,
-            config = { feature.value().toJSONObject() },
-            onConfigured = { feature.recordExposure() },
-        )
-        runner.createTab()
     }
 
     override fun onCreateView(
@@ -69,11 +66,12 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
+        val tabId = tabId ?: return@content
         FirefoxTheme {
             WebContent(
                 components.core.engine,
                 components.core.store,
-                Target.CustomTab(runner.tabId),
+                Target.CustomTab(tabId),
             )
         }
     }
@@ -81,15 +79,44 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // The pattern comes from Nimbus; a broken value must fail the import,
-        // not crash the app.
-        val fileNamePattern = runCatching {
-            Regex(FxNimbus.features.googlePasswordsImport.value().downloadFilePattern)
-        }.getOrElse { throwable ->
-            logger.error("Invalid download file pattern", throwable)
-            finishWith(PasswordsImporterResult.Failure)
-            return
+        val journeys = requireComponents.webFlowJourneys
+        viewLifecycleOwner.lifecycleScope.launch {
+            val journey = withContext(Dispatchers.IO) {
+                journeys.journey(WebFlowJourneyRepository.GOOGLE_PASSWORDS_IMPORT)
+            }
+            val launchUrl = journey?.optString(LAUNCH_URL).orEmpty()
+            // The pattern comes from Remote Settings; a broken value must fail
+            // the import, not crash the app.
+            val fileNamePattern = journey?.optString(DOWNLOAD_FILE_PATTERN)
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { runCatching { Regex(it) }.getOrNull() }
+            if (journey == null || launchUrl.isEmpty() || fileNamePattern == null) {
+                logger.error("No usable ${WebFlowJourneyRepository.GOOGLE_PASSWORDS_IMPORT} journey")
+                finishWith(PasswordsImporterResult.Failure)
+                return@launch
+            }
+            val runner = runner ?: createRunner(launchUrl, journey)
+            setUpDownload(view, runner, fileNamePattern)
+            runner.start()
         }
+    }
+
+    private fun createRunner(launchUrl: String, journey: JSONObject): WebFlowRunner {
+        val feature = FxNimbus.features.googlePasswordsImport
+        return WebFlowRunner(
+            engine = requireComponents.core.engine,
+            store = requireComponents.core.store,
+            launchUrl = launchUrl,
+            config = { journey },
+            onConfigured = { feature.recordExposure() },
+        ).also {
+            it.createTab()
+            runner = it
+            tabId = it.tabId
+        }
+    }
+
+    private fun setUpDownload(view: View, runner: WebFlowRunner, fileNamePattern: Regex) {
         downloadFeature.set(
             feature = PrivateDownloadFeature(
                 store = requireComponents.core.store,
@@ -103,7 +130,6 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
             owner = viewLifecycleOwner,
             view = view,
         )
-        runner.start()
     }
 
     /**
@@ -148,7 +174,7 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        runner.release()
+        runner?.release()
         // Also covers leaving the screen before the import finished.
         deleteExport(exportDirectory)
     }
@@ -164,5 +190,7 @@ class ImportPasswordsFromGoogleFragment : SecureFragment() {
         const val REQUEST_KEY = "import_passwords_from_google_request"
         private const val EXPORT_DIRECTORY = "google-passwords-import"
         private const val EXPORT_FILE = "export.csv"
+        private const val LAUNCH_URL = "launch-url"
+        private const val DOWNLOAD_FILE_PATTERN = "download-file-pattern"
     }
 }

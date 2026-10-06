@@ -6,70 +6,34 @@
 
 /**
  * Android glue around the shared journey controller (web-flow-controller.js,
- * loaded before this script). The app sends the journey config over native
- * messaging in a `configure` message, together with the id of the attempt it
- * belongs to; the runner content script asks for the actions of each page and
- * reports its results here, which are forwarded to the app.
+ * loaded before this script). The app only talks to the runner in its hidden
+ * tab; the runner passes on the attempt id and journey config it got from the
+ * app with every `ready` request, and this script keeps one controller for
+ * the attempt, created the first time its id is seen.
  *
  * The controller's memory lives in this page, which is why the manifest
  * declares the background as persistent: an event page could be unloaded
  * mid-attempt and lose it.
  */
 
-const PORT_NAME = "mozacWebFlowRunner";
-const CONFIGURE_TIMEOUT_MS = 10000;
-
-/**
- * Only one import runs at a time; a `configure` message starts a new attempt
- * and discards the previous one.
- */
+/** One import runs at a time; a new attempt id replaces the previous attempt. */
 let currentAttempt = null;
-let attemptWaiters = [];
 
-const nativePort = browser.runtime.connectNative(PORT_NAME);
-
-function onConfigure({ attemptId, config }) {
-  currentAttempt = {
-    id: attemptId,
-    controller: new WebFlowController(config),
-    // The first tab that receives "start" from the app claims the attempt.
-    tabId: null,
-  };
-  // Waiters remove themselves once their attempt is configured.
-  [...attemptWaiters].forEach(waiter => waiter());
+function attemptFor(attemptId, config, tabId) {
+  if (currentAttempt?.id !== attemptId) {
+    currentAttempt = {
+      id: attemptId,
+      controller: new WebFlowController(config),
+      // The tab of the first page of the attempt; the app only starts the
+      // runner in its hidden tab, so other tabs never claim it.
+      tabId,
+    };
+  }
+  return currentAttempt;
 }
 
-/**
- * Resolves with the attempt once its `configure` message has arrived, or
- * with null after a timeout; the runner can announce a page before the app
- * has configured the attempt.
- */
-function waitForAttempt(attemptId) {
-  if (currentAttempt?.id === attemptId) {
-    return Promise.resolve(currentAttempt);
-  }
-  return new Promise(resolve => {
-    const finish = attempt => {
-      clearTimeout(timer);
-      attemptWaiters = attemptWaiters.filter(w => w !== waiter);
-      resolve(attempt);
-    };
-    const waiter = () => {
-      if (currentAttempt?.id === attemptId) {
-        finish(currentAttempt);
-      }
-    };
-    const timer = setTimeout(() => finish(null), CONFIGURE_TIMEOUT_MS);
-    attemptWaiters.push(waiter);
-  });
-}
-
-async function onReady({ attemptId, url }, sender) {
-  const attempt = await waitForAttempt(attemptId);
-  if (!attempt) {
-    return { type: "error", reason: "config-missing" };
-  }
-  attempt.tabId ??= sender.tab?.id;
+function onReady({ attemptId, config, url }, sender) {
+  const attempt = attemptFor(attemptId, config, sender.tab?.id);
   if (attempt.tabId !== sender.tab?.id) {
     return { type: "idle", reason: "foreign-tab" };
   }
@@ -82,22 +46,12 @@ function onFailed({ attemptId, onceKey }) {
   }
 }
 
-function onResult(message) {
-  nativePort.postMessage(message);
-}
-
 const HANDLERS = {
   ready: onReady,
-  result: onResult,
   failed: onFailed,
 };
 
-browser.runtime.onMessage.addListener((message, sender) =>
-  HANDLERS[message?.type]?.(message, sender)
-);
-
-nativePort.onMessage.addListener(message => {
-  if (message?.type === "configure") {
-    onConfigure(message);
-  }
+browser.runtime.onMessage.addListener((message, sender) => {
+  const handler = HANDLERS[message?.type];
+  return handler ? Promise.resolve(handler(message, sender)) : undefined;
 });

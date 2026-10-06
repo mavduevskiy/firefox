@@ -18,9 +18,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDirections
 import androidx.navigation.NavHostController
 import androidx.navigation.fragment.findNavController
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
@@ -82,7 +81,10 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
             lensFeature?.get()?.onCameraPermissionResult(isGranted)
         }
 
-    private val importResultFlow = MutableSharedFlow<FenixImporterEvent>(extraBufferCapacity = 1)
+    // Every view builds a new store whose middleware collects the import
+    // results until the channel is closed, so each view gets its own channel.
+    // It buffers results that arrive before the store's middleware collects.
+    private var importResults = Channel<FenixImporterEvent>(Channel.BUFFERED)
 
     @Suppress("LongMethod")
     override fun onCreateView(
@@ -90,6 +92,9 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
+        importResults.close()
+        val viewImportResults = Channel<FenixImporterEvent>(Channel.BUFFERED)
+        importResults = viewImportResults
         val toolbarStore = buildToolbarStore()
         val buildStore = { composeNavController: NavHostController ->
             val appStore = requireComponents.appStore
@@ -208,7 +213,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                             AppAction.BookmarkAction.BookmarkOperationResultReported(it)
                                         )
                                     },
-                                    importEvents = { importResultFlow },
+                                    importEvents = { viewImportResults.receiveAsFlow() },
                                 ),
                             ),
                     )
@@ -237,22 +242,19 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
             viewLifecycleOwner,
         ) { _, bundle ->
             ImportBookmarksDialogFragment.decodeResult(bundle)?.let {
-                importResultFlow.tryEmit(it)
+                importResults.trySend(it)
             }
         }
 
         // The Google import is a sibling destination, so its result arrives
-        // through the parent fragment manager, while this screen is being
-        // recreated: wait for the middleware to subscribe before emitting.
+        // through the parent fragment manager while this screen is being
+        // recreated, before its store exists.
         parentFragmentManager.setFragmentResultListener(
             ImportFromGoogleFragment.REQUEST_KEY,
             viewLifecycleOwner,
         ) { _, bundle ->
-            ImportBookmarksDialogFragment.decodeResult(bundle)?.let { event ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    importResultFlow.subscriptionCount.first { it > 0 }
-                    importResultFlow.emit(event)
-                }
+            ImportBookmarksDialogFragment.decodeResult(bundle)?.let {
+                importResults.trySend(it)
             }
         }
     }

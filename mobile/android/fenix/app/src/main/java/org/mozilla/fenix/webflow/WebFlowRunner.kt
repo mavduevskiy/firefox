@@ -29,8 +29,8 @@ import java.util.UUID
  * @param engine Creates the session and runs the extension.
  * @param store Holds the session as a custom tab.
  * @param launchUrl The URL the session starts on.
- * @param config Provides the journey config sent to the extension.
- * @param onConfigured Invoked when the config was sent, for exposure recording.
+ * @param config Provides the journey config sent to the runner.
+ * @param onConfigured Invoked when the config was first sent, for exposure recording.
  */
 class WebFlowRunner(
     private val engine: Engine,
@@ -42,6 +42,7 @@ class WebFlowRunner(
     private val logger = Logger("WebFlowRunner")
     private val extensionController = BuiltInWebExtensionController(EXTENSION_ID, EXTENSION_URL, PORT_NAME)
     private var engineSession: EngineSession? = null
+    private var configured = false
 
     /** Identifies this attempt in every message exchanged with the extension. */
     val attemptId: String = UUID.randomUUID().toString()
@@ -69,35 +70,31 @@ class WebFlowRunner(
     }
 
     /**
-     * Installs the extension, sends it the journey and starts the runner in
-     * the hidden session only, so takeout pages the user opens elsewhere are
-     * left alone.
+     * Installs the extension and starts the runner in the hidden session
+     * only, so takeout pages the user opens elsewhere are left alone. The
+     * runner of every page in the session gets the attempt id and the journey
+     * config with "start", and reports its results back on the same port.
      */
     fun start() {
         val session = checkNotNull(engineSession)
-        extensionController.registerBackgroundMessageHandler(
-            object : MessageHandler {
-                override fun onPortConnected(port: Port) {
-                    port.postMessage(
-                        JSONObject()
-                            .put("type", "configure")
-                            .put("attemptId", attemptId)
-                            .put("config", config()),
-                    )
-                    onConfigured()
-                }
-
-                // The runner reports every result through the background script.
-                override fun onPortMessage(message: Any, port: Port) {
-                    logger.info("runner: $message")
-                }
-            },
-        )
         extensionController.registerContentMessageHandler(
             session,
             object : MessageHandler {
                 override fun onPortConnected(port: Port) {
-                    port.postMessage(JSONObject().put("type", "start").put("attemptId", attemptId))
+                    port.postMessage(
+                        JSONObject()
+                            .put("type", "start")
+                            .put("attemptId", attemptId)
+                            .put("config", config()),
+                    )
+                    if (!configured) {
+                        configured = true
+                        onConfigured()
+                    }
+                }
+
+                override fun onPortMessage(message: Any, port: Port) {
+                    logger.info("runner: $message")
                 }
             },
         )

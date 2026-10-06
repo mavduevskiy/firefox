@@ -223,6 +223,8 @@ internal sealed class SnackbarAction : BookmarksAction {
     data object SelectFolderFailed : SnackbarAction()
 
     data object ImportFailed : SnackbarAction()
+
+    data class ImportSucceeded(val count: Int) : SnackbarAction()
 }
 
 internal data object RootOverflowMenuClicked : BookmarksAction

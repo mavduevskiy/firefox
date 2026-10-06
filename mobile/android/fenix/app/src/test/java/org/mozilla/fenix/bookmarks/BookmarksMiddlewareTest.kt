@@ -3173,6 +3173,19 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
+    fun `WHEN an import succeeds THEN the mobile bookmarks reload and the success snackbar shows`() = runTest {
+        coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(generateBookmarkTree())
+        val middleware = buildMiddleware(this)
+        val store = middleware.makeStore()
+
+        store.dispatch(ImportAction.ImportSucceeded(count = 2))
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(BookmarksSnackbarState.ImportSucceeded(count = 2), store.state.bookmarksSnackbarState)
+        coVerify { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) }
+    }
+
+    @Test
     fun `while moving items and adding a new folder, returning from the add folder screen results in the move items being moved to the new folder`() =
         runTest {
             val tree = generateBookmarkTree()

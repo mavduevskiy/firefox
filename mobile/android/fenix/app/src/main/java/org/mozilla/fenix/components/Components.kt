@@ -37,6 +37,7 @@ import mozilla.components.service.fxrelay.eligibility.middlewares.ClearLastUsedM
 import mozilla.components.support.base.android.DefaultProcessInfoProvider
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.worker.Frequency
+import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.remotesettings.DefaultRemoteSettingsSyncScheduler
 import mozilla.components.support.remotesettings.RemoteSettingsServer
 import mozilla.components.support.remotesettings.RemoteSettingsService
@@ -106,6 +107,7 @@ import org.mozilla.fenix.termsofuse.TermsOfUseManager
 import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
+import org.mozilla.fenix.webflow.WebFlowJourneyRepository
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
 import org.mozilla.gecko.search.SearchWidgetProvider
 
@@ -413,6 +415,15 @@ class Components(
         }
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }
+
+    val webFlowJourneys by lazyMonitored {
+        WebFlowJourneyRepository(
+            client = remoteSettingsService.value.remoteSettingsService.makeClient(
+                WebFlowJourneyRepository.COLLECTION_NAME,
+            ),
+            readDump = { context.assets.readJSONObject(WebFlowJourneyRepository.DUMP_ASSET) },
+        )
+    }
 
     val distributionIdManager by lazyMonitored {
         DistributionIdManager(

@@ -1953,6 +1953,11 @@
     <string name="bookmark_import_from_google_menu_button">Import from Google</string>
     <!-- Snackbar message shown when a bookmark import attempt fails. -->
     <string name="bookmark_import_failure_snackbar">Couldn’t import bookmarks. Try again.</string>
+    <!-- Snackbar message shown when a bookmark import succeeds. %d is the number of imported bookmarks. -->
+    <plurals name="bookmark_import_success_snackbar">
+        <item quantity="one">Imported %d bookmark</item>
+        <item quantity="other">Imported %d bookmarks</item>
+    </plurals>
     <!-- Default name for the folder created when importing bookmarks from a file. -->
     <string name="bookmark_import_destination_default_name">Imported bookmarks</string>
     <!-- Bookmark multi select title in app bar
