@@ -1,0 +1,7 @@
+[DEFAULT]
+support-files = [
+  "start.html",
+  "done.html",
+]
+
+["browser_web_flow_journey.js"]

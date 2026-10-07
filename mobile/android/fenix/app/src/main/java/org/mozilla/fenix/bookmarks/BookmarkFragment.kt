@@ -39,6 +39,7 @@ import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
 import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
@@ -96,6 +97,9 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                 fragmentStore(
                     BookmarksState.default.copy(
                         showBookmarksImport = requireComponents.settings.importBookmarksFeatureFlagEnabled,
+                        showBookmarksImportFromGoogle =
+                            requireComponents.settings.importBookmarksFromGoogleFeatureFlagEnabled &&
+                                FxNimbus.features.googleTakeoutImport.value().enabled,
                         sortOrder =
                             BookmarksListSortOrder.fromString(
                                 value = requireComponents.settings.bookmarkListSortOrder,
@@ -150,6 +154,12 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                                 childFragmentManager,
                                                 ImportBookmarksDialogFragment.TAG,
                                             )
+                                    },
+                                    navigateToImportFromGoogleScreen = {
+                                        navController.navigate(
+                                            BookmarkFragmentDirections
+                                                .actionBookmarkFragmentToImportFromGoogleFragment()
+                                        )
                                     },
                                     shareBookmarks = { bookmarks ->
                                         val shareItems =

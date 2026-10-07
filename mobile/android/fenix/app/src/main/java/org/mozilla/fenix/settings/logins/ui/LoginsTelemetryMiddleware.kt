@@ -75,7 +75,8 @@ internal class LoginsTelemetryMiddleware : Middleware<LoginsState, LoginsAction>
             is SearchLogins,
             is ImportPasswordsOverflowMenuClicked,
             is ImportPasswordsOverflowMenuDismissed,
-            is ImportFileClicked -> Unit
+            is ImportFileClicked,
+            is ImportFromGoogleClicked -> Unit
         }
     }
 }

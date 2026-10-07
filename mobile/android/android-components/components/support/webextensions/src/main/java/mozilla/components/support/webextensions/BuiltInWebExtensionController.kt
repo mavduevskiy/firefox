@@ -85,6 +85,9 @@ class BuiltInWebExtensionController(
         // We need to retrieve the list of installed extensions from `WebExtensionSupport` because
         // `WebExtensionController.installedBuiltInExtensions` is only used for extensions installed
         // via the `install()` method above.
+        // That caught me off-guard, the caching didn't work properly? Installing the extension
+        // second time didn't work because the id would be still in the installed list.
+        installedBuiltInExtensions.remove(extensionId)
         WebExtensionSupport.installedExtensions[extensionId]?.let { extension ->
             runtime.uninstallWebExtension(
                 extension,

@@ -72,6 +72,29 @@ class BuiltInWebExtensionControllerTest {
     }
 
     @Test
+    fun `uninstall webextension - clears the cached extension so it can be installed again`() {
+        val engine: Engine = mock()
+        val extension: WebExtension = mock()
+        whenever(extension.id).thenReturn(extensionId)
+        val controller = BuiltInWebExtensionController(extensionId, extensionUrl, defaultPort)
+        BuiltInWebExtensionController.installedBuiltInExtensions[extensionId] = extension
+        WebExtensionSupport.installedExtensions[extensionId] = extension
+
+        try {
+            controller.uninstall(engine)
+
+            verify(engine).uninstallWebExtension(eq(extension), any(), any())
+            assertFalse(BuiltInWebExtensionController.installedBuiltInExtensions.containsKey(extensionId))
+
+            // An install issued before the uninstall completes installs again.
+            controller.install(engine)
+            verify(engine).installBuiltInWebExtension(eq(extensionId), eq(extensionUrl), any(), any())
+        } finally {
+            WebExtensionSupport.installedExtensions.remove(extensionId)
+        }
+    }
+
+    @Test
     fun `install webextension - invokes success callback if extension already installed`() {
         val engine: Engine = mock()
         val controller = BuiltInWebExtensionController(extensionId, extensionUrl, defaultPort)

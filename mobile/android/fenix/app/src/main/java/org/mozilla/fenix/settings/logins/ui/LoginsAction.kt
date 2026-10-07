@@ -34,6 +34,8 @@ internal data object ImportPasswordsOverflowMenuDismissed : LoginsAction
 
 internal data object ImportFileClicked : LoginsAction
 
+internal data object ImportFromGoogleClicked : LoginsAction
+
 internal data object LearnMoreAboutSync : LoginsAction
 
 internal data class LoginClicked(val item: LoginItem) : LoginsAction

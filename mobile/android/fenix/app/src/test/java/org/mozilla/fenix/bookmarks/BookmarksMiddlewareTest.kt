@@ -46,6 +46,7 @@ class BookmarksMiddlewareTest {
     private lateinit var navigateToBrowser: () -> Unit
     private lateinit var navigateToSignIntoSync: () -> Unit
     private lateinit var navigateToImportDialog: () -> Unit
+    private lateinit var navigateToImportFromGoogleScreen: () -> Unit
     private lateinit var shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit
     private lateinit var showTabsTray: (Boolean) -> Unit
     private lateinit var getBrowsingMode: () -> BrowsingMode
@@ -103,6 +104,7 @@ class BookmarksMiddlewareTest {
         navigateToBrowser = {}
         navigateToSignIntoSync = {}
         navigateToImportDialog = {}
+        navigateToImportFromGoogleScreen = {}
         shareBookmarks = {}
         showTabsTray = { _ -> }
         getBrowsingMode = { BrowsingMode.Normal }
@@ -3400,6 +3402,20 @@ class BookmarksMiddlewareTest {
         }
 
     @Test
+    fun `WHEN ImportFromGoogleClicked is dispatched THEN rootMenuShown is false and navigation is invoked`() = runTest {
+        var navigated = false
+        navigateToImportFromGoogleScreen = { navigated = true }
+        val store = buildMiddleware(this).makeStore(BookmarksState.default.copy(rootMenuShown = true))
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(ImportAction.ImportFromGoogleClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertFalse(store.state.rootMenuShown)
+        assertTrue(navigated)
+    }
+
+    @Test
     fun `WHEN the search query changes to empty string THEN update the bookmark items with no items`() = runTest {
         val store = buildMiddleware(this).makeStore()
 
@@ -3561,6 +3577,7 @@ class BookmarksMiddlewareTest {
             navigateToBrowser = navigateToBrowser,
             navigateToSignIntoSync = navigateToSignIntoSync,
             navigateToImportDialog = navigateToImportDialog,
+            navigateToImportFromGoogleScreen = navigateToImportFromGoogleScreen,
             shareBookmarks = shareBookmarks,
             showTabsTray = showTabsTray,
             resolveFolderTitle = resolveFolderTitle,

@@ -1,0 +1,12 @@
+---
+features:
+  google-takeout-import:
+    description: >
+      Imports bookmarks from a Google account by driving a Google Takeout
+      export in a hidden tab with the web flow runner extension. The journey
+      comes from the `web-flow-journeys` Remote Settings collection.
+    variables:
+      enabled:
+        description: If true, the "Import from Google" entry point is shown.
+        type: Boolean
+        default: true

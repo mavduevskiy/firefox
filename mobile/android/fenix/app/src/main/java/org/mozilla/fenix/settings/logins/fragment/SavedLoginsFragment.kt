@@ -16,13 +16,17 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.password.importer.PasswordsImporterResult
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.Config
+import org.mozilla.fenix.R
 import org.mozilla.fenix.SecureFragment
 import org.mozilla.fenix.components.LogMiddleware
+import org.mozilla.fenix.compose.snackbar.Snackbar
+import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.logins.ImportPasswordsDialogFragment
 import org.mozilla.fenix.settings.logins.ui.DefaultSavedLoginsStorage
 import org.mozilla.fenix.settings.logins.ui.LoginsListAppeared
@@ -54,6 +58,34 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
                 loginsStore?.dispatch(LoginsListAppeared)
             }
         }
+        // The Google import is a sibling destination, so its result arrives
+        // through the parent fragment manager.
+        parentFragmentManager.setFragmentResultListener(
+            ImportPasswordsFromGoogleFragment.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            val result = ImportPasswordsDialogFragment.decodeResult(bundle)
+            if (result is PasswordsImporterResult.Success) {
+                loginsStore?.dispatch(LoginsListAppeared)
+            }
+            showImportFromGoogleResult(result)
+        }
+    }
+
+    private fun showImportFromGoogleResult(result: PasswordsImporterResult?) {
+        val message = when (result) {
+            is PasswordsImporterResult.Success -> resources.getQuantityString(
+                R.plurals.passwords_import_from_google_success,
+                result.importCount,
+                result.importCount,
+            )
+            PasswordsImporterResult.Failure -> getString(R.string.passwords_import_from_google_failure)
+            PasswordsImporterResult.Canceled, null -> return
+        }
+        Snackbar.make(
+            snackBarParentView = requireView(),
+            snackbarState = SnackbarState(message = message),
+        ).show()
     }
 
     override fun onCreateView(
@@ -68,6 +100,9 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
                 fragmentStore(
                     LoginsState.default.copy(
                         showPasswordsImport = requireComponents.settings.importPasswordsFeatureFlagEnabled,
+                        showPasswordsImportFromGoogle =
+                            requireComponents.settings.importPasswordsFeatureFlagEnabled &&
+                                FxNimbus.features.googlePasswordsImport.value().enabled,
                         sortOrder =
                             LoginsSortOrder.fromString(
                                 value = requireComponents.settings.loginsListSortOrder,
@@ -98,6 +133,11 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
                                                 childFragmentManager,
                                                 ImportPasswordsDialogFragment.TAG,
                                             )
+                                    },
+                                    navigateToImportFromGoogleScreen = {
+                                        navController.navigate(
+                                            R.id.action_savedLoginsFragment_to_importPasswordsFromGoogleFragment,
+                                        )
                                     },
                                     openTab = { url, openInNewTab ->
                                         findNavController().openToBrowser()

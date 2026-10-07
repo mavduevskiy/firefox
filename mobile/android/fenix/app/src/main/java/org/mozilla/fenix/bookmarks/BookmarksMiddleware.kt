@@ -46,6 +46,7 @@ private const val SEARCH_DELAY_MS = 250L
  * @param navigateToBrowser Invoked when handling [BookmarkClicked] to navigate to the browser.
  * @param navigateToSignIntoSync Invoked when handling [SignIntoSyncClicked].
  * @param navigateToImportDialog Invoked to navigate to the import bookmarks dialog.
+ * @param navigateToImportFromGoogleScreen Invoked to navigate to the import bookmarks from Google screen.
  * @param shareBookmarks Invoked when the share option is selected from a menu. Allows sharing of one or more bookmarks
  * @param showTabsTray Invoked after opening tabs from menus.
  * @param resolveFolderTitle Invoked to lookup user-friendly bookmark titles.
@@ -71,6 +72,7 @@ internal class BookmarksMiddleware(
     private val navigateToBrowser: () -> Unit,
     private val navigateToSignIntoSync: () -> Unit,
     private val navigateToImportDialog: () -> Unit,
+    private val navigateToImportFromGoogleScreen: () -> Unit = {},
     private val shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit = {},
     private val showTabsTray: (isPrivateMode: Boolean) -> Unit,
     private val resolveFolderTitle: (BookmarkNode) -> String,
@@ -107,6 +109,7 @@ internal class BookmarksMiddleware(
                     store.tryDispatchLoadFor(BookmarkRoot.Mobile.id)
                     importEvents()
                         .onEach { result ->
+                            println("$this result = $result")
                             when (result) {
                                 FenixImporterEvent.Started -> store.dispatch(ImportAction.ImportStarted)
                                 FenixImporterEvent.Canceled -> store.dispatch(ImportAction.ImportCancelled)
@@ -401,6 +404,9 @@ internal class BookmarksMiddleware(
             }
             is ImportAction.ImportFileClicked -> {
                 navigateToImportDialog()
+            }
+            is ImportAction.ImportFromGoogleClicked -> {
+                navigateToImportFromGoogleScreen()
             }
             is ImportAction.ImportFailed -> {
                 store.dispatch(SnackbarAction.ImportFailed)

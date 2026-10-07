@@ -1,6 +1,7 @@
 import com.android.build.api.variant.FilterConfiguration
 
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 import org.mozilla.conventions.WriteRuntimeDependencies
 
@@ -472,6 +473,7 @@ dependencies {
     implementation project(':components:browser-engine-gecko')
     implementation project(':components:compose-awesomebar')
     implementation project(':components:compose-base')
+    implementation project(':components:compose-engine')
     implementation project(':components:compose-browser-toolbar')
     implementation project(':components:compose-cfr')
     implementation project(':components:compose-menu')
@@ -792,6 +794,47 @@ tasks.matching { it.name.startsWith("generateSafeArgs") }.configureEach {
 ${f.text}"""
             }
         }
+    }
+}
+
+// The web flow runner extension and its journeys are shared with desktop. The extension lives in
+// `toolkit/components/webflow/` and the journeys in desktop's Remote Settings dump, which Fenix
+// uses as its fallback until the collection syncs. Both are copied into a generated assets
+// directory registered via the variant Sources API; the `extensions/web_flow_runner/` subpath keeps
+// the extension at `resource://android/assets/extensions/web_flow_runner/`.
+abstract class SyncWebFlowRunnerExtension extends DefaultTask {
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getExtensionDir()
+
+    @InputFile
+    @PathSensitive(PathSensitivity.NONE)
+    abstract RegularFileProperty getJourneysDump()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract FileSystemOperations getFs()
+
+    @TaskAction
+    void sync() {
+        fs.sync { spec ->
+            spec.into(outputDir)
+            spec.from(extensionDir) { it.into("extensions/web_flow_runner") }
+            spec.from(journeysDump) { it.into("webflow") }
+        }
+    }
+}
+
+def syncWebFlowRunnerExtension = tasks.register("syncWebFlowRunnerExtension", SyncWebFlowRunnerExtension) {
+    extensionDir.set(new File("${gradle.mozconfig.topsrcdir}/toolkit/components/webflow/extension"))
+    journeysDump.set(new File("${gradle.mozconfig.topsrcdir}/services/settings/dumps/main/web-flow-journeys.json"))
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets.addGeneratedSourceDirectory(syncWebFlowRunnerExtension) { it.outputDir }
     }
 }
 

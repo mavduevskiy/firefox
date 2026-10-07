@@ -2861,6 +2861,13 @@ class Settings(
             default = { FxNimbus.features.importBookmarks.value().enabled },
         )
 
+    /** Feature flag that indicates if the Import Bookmarks from Google feature is enabled. */
+    var importBookmarksFromGoogleFeatureFlagEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_import_bookmarks_from_google),
+            default = { Config.channel.isDebug },
+        )
+
     /**
      * Persists IPProtection state set through Secret Settings.
      *

@@ -169,6 +169,7 @@ private fun EditFolderScreenPreview() {
                     selectedItems = listOf(),
                     rootMenuShown = false,
                     showBookmarksImport = true,
+                    showBookmarksImportFromGoogle = false,
                     sortMenuShown = false,
                     sortOrder = BookmarksListSortOrder.default,
                     recursiveSelectedCount = null,

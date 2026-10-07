@@ -1971,8 +1971,15 @@
     <string name="bookmark_sort_menu_z_to_a">Sort by Z to A</string>
     <!-- Label for button to import bookmarks from file. -->
     <string name="bookmark_import_menu_button">Import from file</string>
+    <!-- Label for button to import bookmarks from Google. -->
+    <string name="bookmark_import_from_google_menu_button">Import from Google</string>
     <!-- Snackbar message shown when a bookmark import attempt fails. -->
     <string name="bookmark_import_failure_snackbar">Couldn’t import bookmarks. Try again.</string>
+    <!-- Snackbar message shown when a bookmark import succeeds. %d is the number of imported bookmarks. -->
+    <plurals name="bookmark_import_success_snackbar">
+        <item quantity="one">Imported %d bookmark</item>
+        <item quantity="other">Imported %d bookmarks</item>
+    </plurals>
     <!-- Default name for the folder created when importing bookmarks from a file. -->
     <string name="bookmark_import_destination_default_name">Imported bookmarks</string>
     <!-- Bookmark multi select title in app bar
@@ -2820,6 +2827,17 @@
     <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Sort passwords menu</string>
     <!-- Label for button to import passwords from file. -->
     <string name="passwords_import_menu_button">Import from file</string>
+    <!-- Content description of the button that opens the menu with the ways to import passwords. -->
+    <string name="passwords_import_overflow_menu_content_description">Import passwords</string>
+    <!-- Label for button to import passwords from Google. -->
+    <string name="passwords_import_from_google_menu_button">Import from Google</string>
+    <!-- Message shown when importing passwords from Google succeeded. %d is the number of imported passwords. -->
+    <plurals name="passwords_import_from_google_success">
+        <item quantity="one">Imported %d password from Google</item>
+        <item quantity="other">Imported %d passwords from Google</item>
+    </plurals>
+    <!-- Message shown when importing passwords from Google failed. -->
+    <string name="passwords_import_from_google_failure">Couldn’t import passwords from Google. Try again.</string>
 
     <!-- Email Masks -->
     <!-- Title for the Email Masks in the settings menu -->

@@ -503,6 +503,9 @@
         <action
             android:id="@+id/action_bookmarkFragment_to_bookmarkEditFragment"
             app:destination="@id/bookmarkEditFragment" />
+        <action
+            android:id="@+id/action_bookmarkFragment_to_importFromGoogleFragment"
+            app:destination="@id/importFromGoogleFragment" />
     </fragment>
 
     <fragment
@@ -517,6 +520,10 @@
             android:defaultValue="false"
             app:argType="boolean" />
     </fragment>
+
+    <fragment
+        android:id="@+id/importFromGoogleFragment"
+        android:name="org.mozilla.fenix.bookmarks.ImportFromGoogleFragment"/>
 
     <fragment
         android:id="@+id/emailMasksSettingsFragment"
@@ -1644,7 +1651,13 @@
                 app:destination="@id/browserFragment"
                 app:popUpTo="@id/settingsFragment"
                 app:popUpToInclusive="true" />
+            <action
+                android:id="@+id/action_savedLoginsFragment_to_importPasswordsFromGoogleFragment"
+                app:destination="@id/importPasswordsFromGoogleFragment" />
         </fragment>
+        <fragment
+            android:id="@+id/importPasswordsFromGoogleFragment"
+            android:name="org.mozilla.fenix.settings.logins.fragment.ImportPasswordsFromGoogleFragment" />
     </navigation>
 
     <dialog

@@ -1591,6 +1591,13 @@ class BookmarksReducerTest {
         assertFalse(result.rootMenuShown)
     }
 
+    @Test
+    fun `WHEN ImportFromGoogleClicked THEN rootMenuShown is false`() {
+        val state = BookmarksState.default.copy(rootMenuShown = true)
+        val result = bookmarksReducer(state, ImportAction.ImportFromGoogleClicked)
+        assertFalse(result.rootMenuShown)
+    }
+
     private fun generateBookmark(
         num: Int = 0,
         url: String = "url",

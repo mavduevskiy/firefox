@@ -58,7 +58,7 @@ internal class ImportPasswordsDialogFragment : DialogFragment() {
                 else -> null
             }
 
-        private fun encodeResult(result: PasswordsImporterResult): Bundle =
+       fun encodeResult(result: PasswordsImporterResult): Bundle =
             Bundle().apply {
                 when (result) {
                     is PasswordsImporterResult.Success -> {

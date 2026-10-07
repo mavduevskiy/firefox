@@ -515,6 +515,8 @@ export default [
       "testing/talos/talos/webextensions/dummy/background.js",
       "testing/talos/talos/webextensions/dummy/content.js",
       "toolkit/components/remotebrowserutils/tests/browser/browser_documentChannel.js",
+      "toolkit/components/webflow/extension/web-flow-background.js",
+      "toolkit/components/webflow/extension/web-flow-content.js",
     ],
     languageOptions: { globals: globals.webextensions },
   },

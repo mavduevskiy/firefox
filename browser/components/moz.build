@@ -78,6 +78,7 @@ DIRS += [
     "translations",
     "uitour",
     "urlbar",
+    "webflow",
     "webrtc",
 ]
 
